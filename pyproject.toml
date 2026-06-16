@@ -1,0 +1,54 @@
+[project]
+name = "django-shop"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "django>=6.0.6",
+    "django-compressor>=4.6.0",
+    "django-ratelimit>=4.1.0",
+    "django-static-precompiler>=2.4",
+    "gunicorn>=26.0.0",
+    "uvicorn>=0.49.0",
+]
+
+[dependency-groups]
+dev = [
+    "debugpy>=1.8.21",
+    "pyright>=1.1.410",
+    "pytest>=9.1.0",
+    "pytest-django>=4.12.0",
+    "pytest-env>=1.6.0",
+    "ruff>=0.15.17",
+    "taskipy2>=1.16.1",
+    "watchdog>=6.0.0",
+]
+
+[tool.ruff]
+src = ["core", "apps"]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+# Rules (E/W - pycodestyle, F - pyflakes, I - isort, B - bugbear, C90 - mccabe, DJ - flake8-django)
+select = ["E", "W", "F", "I", "B", "C90", "UP", "DJ"]
+ignore = []
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.pyright]
+include = ["core", "apps"]
+typeCheckingMode = "strict" # basic or strict
+
+[tool.taskipy.tasks]
+# # Запуск сервера розробки
+dev = "python manage.py runserver"
+
+# # Створення та застосування міграцій за один раз
+# migrate = { composite = ["python manage.py makemigrations", "python manage.py migrate"] }
+
+# # Швидкі перевірки коду (лінтер + форматинг + типи)
+# lint = { composite = ["ruff check", "ruff format --check", "pyright"] }
+# fix = "ruff check --fix"

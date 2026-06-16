@@ -1,0 +1,65 @@
+services:
+  nginx:
+    volumes:
+      - ./logs/dev/nginx:/var/log/nginx
+    depends_on:
+      - app
+
+  app:
+    build:
+      context: .
+      target: development
+    restart: on-failure
+    command: >
+      sh -c "uv run manage.py makemigrations && 
+             uv run manage.py migrate &&
+             uv run python -m debugpy --listen 0.0.0.0:5678 -m manage runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000" # django app
+      - "5678:5678" # debugpy
+    environment:
+      - LOG_FILE=/app/logs/api.log
+
+    healthcheck:
+      disable: true
+
+    # Run as root during development so the environment is mutable
+    # Alternatively, you could set `UV_PROJECT_ENVIRONMENT` to a path owned by the non-root user
+    user: root
+
+    volumes:
+      - ./logs/dev:/app/logs
+      - /app/.venv/
+      - /root/.cache/uv/
+
+    develop:
+      # Create a `watch` configuration to update the app
+      # https://docs.docker.com/compose/file-watch/#compose-watch-versus-bind-mounts
+      watch:
+        # Sync the working directory with the `/app` directory in the container
+        - action: sync
+          path: ./app
+          target: /app/app
+          # Exclude the project virtual environment — it could be for a
+          # different platform in the container
+          ignore:
+            - .git/
+            - .venv/
+            - .vscode/
+            - logs/
+        # Rebuild the image if dependencies change by checking uv.lock
+        - action: rebuild
+          path: ./uv.lock
+
+
+  postgres:
+    environment:
+      - POSTGRES_INITDB_ARGS=--username=${POSTGRES_USER}
+    ports:
+      - "5433:5432"
+
+volumes:
+  pg_data:
+    name: ai_tg_postgres_dev_data
+  pgadmin_data:
+    name: ai_tg_pgadmin_dev_data
