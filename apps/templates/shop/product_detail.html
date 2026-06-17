@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ product.name }} | Hop & Barley{% endblock title %}
+
+{% block content %}
+<main class="page-product">
+  <div class="container">
+    <!-- Product Info Section -->
+    <section class="product-details-section">
+      <div class="product-image-container">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+        {% else %}
+        <img src="{% static 'img/products/citra_hops.jpg' %}" alt="{{ product.name }}" class="product-image">
+        {% endif %}
+      </div>
+      <div class="product-info-column">
+        <div class="product-title-price">
+          <h1 class="product-name">{{ product.name }}</h1>
+          <div class="price-section">
+            <span class="price-tag">{% if product.price_tag %}{{ product.price_tag }}{% else %}per item{% endif %}</span>
+            <p class="product-price">${{ product.price }}</p>
+          </div>
+        </div>
+        <div class="product-description">
+          {{ product.description|linebreaks }}
+        </div>
+        <!-- Container for managing the cart -->
+        <div class="cart-controls">
+          <form method="post" action="{% url 'add_to_cart' product.id %}" id="add-to-cart-form">
+            {% csrf_token %}
+            <!-- Add to Cart button (visible by default) -->
+            <button type="submit" class="button button--primary add-to-cart-button" id="add-to-cart-btn">
+              <i class="fa-solid fa-cart-shopping"></i>
+              <span>Add to Cart</span>
+            </button>
+          </form>
+
+          <!-- Quantity counter (hidden by default, can be controlled via JS or updated dynamically) -->
+          <div class="quantity-counter is-hidden" id="quantity-counter">
+            <button class="quantity-btn" data-action="decrease" aria-label="Decrease quantity">
+              <i class="fa-solid fa-minus"></i>
+            </button>
+            <span class="quantity-value">1 in cart</span>
+            <button class="quantity-btn" data-action="increase" aria-label="Increase quantity">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Technical Specifications Accordion -->
+    <section class="accordion-section">
+      <div class="accordion-item">
+        <div class="accordion-title">
+          <h3>Technical Specifications</h3>
+          <i class="fa-solid fa-chevron-down accordion-icon"></i>
+        </div>
+        <div class="accordion-content">
+          <ul>
+            {% if product.origin %}<li><strong>Origin:</strong> {{ product.origin }}</li>{% endif %}
+            {% if product.product_type %}<li><strong>Type:</strong> {{ product.product_type }}</li>{% endif %}
+            {% if product.alpha_acids %}<li><strong>Alpha Acids:</strong> {{ product.alpha_acids }}</li>{% endif %}
+            {% if product.beta_acids %}<li><strong>Beta Acids:</strong> {{ product.beta_acids }}</li>{% endif %}
+            {% if product.aroma_profile %}<li><strong>Aroma Profile:</strong> {{ product.aroma_profile }}</li>{% endif %}
+            {% if product.usage %}<li><strong>Usage:</strong> {{ product.usage }}</li>{% endif %}
+            {% if product.recommended_styles %}<li><strong>Recommended Beer Styles:</strong> {{ product.recommended_styles }}</li>{% endif %}
+            {% if not product.origin and not product.product_type %}
+            <li><strong>Availability:</strong> {% if product.stock > 0 %}In stock ({{ product.stock }} items){% else %}Out of stock{% endif %}</li>
+            <li><strong>Category:</strong> {{ product.category.name }}</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Latest Reviews Section -->
+    <section class="reviews-section">
+      <h2 class="reviews-title">Latest reviews</h2>
+      
+      {% if can_review %}
+      <div class="add-review-container" style="margin-bottom: 2rem; padding: 1.5rem; border: 1px solid var(--border-color, #e0e0e0); border-radius: 8px;">
+        <h3 style="margin-bottom: 1rem;">Write a Review</h3>
+        <form method="post" action="{% url 'add_review' product.id %}">
+          {% csrf_token %}
+          <div class="checkout-form-group" style="margin-bottom: 1rem;">
+            <label for="review-rating" style="display: block; margin-bottom: 0.5rem;">Rating</label>
+            <select id="review-rating" name="rating" class="Input" style="width: 100%; max-width: 150px; background: transparent; color: inherit; padding: 8px;" required>
+              <option value="5">5 ★★★★★</option>
+              <option value="4">4 ★★★★☆</option>
+              <option value="3">3 ★★★☆☆</option>
+              <option value="2">2 ★★☆☆☆</option>
+              <option value="1">1 ★☆☆☆☆</option>
+            </select>
+          </div>
+          <div class="checkout-form-group" style="margin-bottom: 1rem;">
+            <label for="review-comment" style="display: block; margin-bottom: 0.5rem;">Comment</label>
+            <textarea id="review-comment" name="comment" class="Textarea" placeholder="Write your review here..." rows="4" style="width: 100%;" required></textarea>
+          </div>
+          <button type="submit" class="button button--primary">Submit Review</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <div class="reviews-grid">
+        {% for review in reviews %}
+        <div class="review-card">
+          <div class="review-rating">
+            {% for i in "12345"|make_list %}
+              {% if forloop.counter <= review.rating %}
+                <i class="fa-solid fa-star"></i>
+              {% else %}
+                <i class="fa-regular fa-star"></i>
+              {% endif %}
+            {% endfor %}
+          </div>
+          <div class="review-body">
+            <h4 class="review-heading">Review by {{ review.user.username }}</h4>
+            <p class="review-text">{{ review.comment }}</p>
+          </div>
+          <div class="review-author">
+            <img src="{% static 'img/avatars/avatar1.svg' %}" alt="User avatar" class="author-avatar">
+            <span class="author-name">{{ review.user.username }}</span>
+          </div>
+        </div>
+        {% empty %}
+        <p>No reviews yet. {% if user.is_authenticated and not can_review %}Only users who purchased this product can leave a review.{% endif %}</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</main>
+{% endblock content %}

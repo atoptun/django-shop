@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin - Add/Edit Product | Hop & Barley{% endblock %}
+
+{% block content %}
+<main class="admin-page-wrapper">
+    <div class="admin-container">
+        <!-- Tabs Navigation -->
+        <div class="admin-tabs">
+            <a href="{% url 'admin_products' %}" class="admin-tab active">Product Management</a>
+            <a href="{% url 'admin_dashboard' %}" class="admin-tab">Dashboard</a>
+        </div>
+
+        <!-- Content Area -->
+        <div class="admin-content">
+            <h1 class="admin-content__title">Admin - Product Stock</h1>
+
+            <form id="product-form" class="admin-form-layout" method="POST" enctype="multipart/form-data" action="{% if product %}{% url 'admin_product_edit' product.id %}{% else %}{% url 'admin_product_add' %}{% endif %}">
+                {% csrf_token %}
+                {% if form.errors %}
+                <div class="form-errors" style="grid-column: span 2; color: var(--error-color, red); margin-bottom: 1rem;">
+                    <p>Please fix the errors below.</p>
+                </div>
+                {% endif %}
+
+                <div class="admin-form-col-left">
+                    <h2 class="admin-form-section-title">Control</h2>
+                    <div class="image-upload-card">
+                        <div class="image-upload-placeholder" {% if product.image %}style="background-image: url('{{ product.image.url }}'); background-size: cover; background-position: center;"{% endif %}>
+                            {% if not product.image %}
+                            <i class="fa-regular fa-image"></i>
+                            {% endif %}
+                        </div>
+                        <input type="file" id="image-upload-input" name="image" class="is-hidden" accept="image/*">
+                        <button type="button" class="button button--primary upload-btn" id="upload-image-btn">Upload Image</button>
+                    </div>
+                </div>
+
+                <div class="admin-form-col-right">
+                    <h2 class="admin-form-section-title">Information</h2>
+                    <div class="product-info-form">
+                        <div class="checkout-form-group">
+                            <label for="prod-title">Title</label>
+                            <input type="text" id="prod-title" name="name" class="Input" placeholder="Product Title" value="{{ form.name.value|default:product.name|default:'' }}" required>
+                            {% if form.name.errors %}
+                            <span class="field-error">{{ form.name.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="checkout-form-group">
+                            <label for="prod-description">Description</label>
+                            <textarea id="prod-description" name="description" class="Textarea" placeholder="Product Description" rows="4" required>{{ form.description.value|default:product.description|default:'' }}</textarea>
+                            {% if form.description.errors %}
+                            <span class="field-error">{{ form.description.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="checkout-form-group">
+                            <label for="prod-price">Price</label>
+                            <input type="number" step="0.01" id="prod-price" name="price" class="Input" placeholder="0.00" value="{{ form.price.value|default:product.price|default:'' }}" required>
+                            {% if form.price.errors %}
+                            <span class="field-error">{{ form.price.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="checkout-form-group">
+                            <label for="prod-stock">Stock</label>
+                            <input type="number" id="prod-stock" name="stock" class="Input" placeholder="0" value="{{ form.stock.value|default:product.stock|default:'0' }}" required>
+                            {% if form.stock.errors %}
+                            <span class="field-error">{{ form.stock.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="checkout-form-group">
+                            <label for="prod-category">Category</label>
+                            <select id="prod-category" name="category" class="Input" style="background: transparent; color: inherit; padding: 8px;" required>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if form.category.value == category.id or product.category.id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.category.errors %}
+                            <span class="field-error">{{ form.category.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Control buttons -->
+                <div class="admin-form-actions">
+                    <button type="submit" class="button button--primary">Save</button>
+                    {% if product %}
+                    <a href="{% url 'admin_product_delete' product.id %}" class="button button--danger" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">Delete</a>
+                    {% endif %}
+                    <a href="{% url 'admin_products' %}" class="button button--secondary" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+{% endblock %}
