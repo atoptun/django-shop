@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout | Hop & Barley{% endblock %}
+
+{% block content %}
+<main class="checkout-page-wrapper">
+    <div class="checkout-container">
+        <h1 class="checkout-title">Order Details</h1>
+
+        <form id="checkout-form" method="POST" action="{% url 'checkout' %}">
+            {% csrf_token %}
+            <!-- Shipping Information -->
+            <section class="checkout-section">
+                <h2 class="checkout-section__title">Shipping information</h2>
+                {% if form.errors %}
+                <div class="form-errors" style="color: var(--error-color, red); margin-bottom: 1rem;">
+                    <p>Please fix the errors below.</p>
+                </div>
+                {% endif %}
+                <div class="checkout-form-group">
+                    <label for="full-name">Full Name</label>
+                    <input type="text" id="full-name" name="full_name" class="Input" placeholder="John Doe" value="{{ form.full_name.value|default:user.get_full_name|default:'' }}" required>
+                    {% if form.full_name.errors %}
+                    <span class="field-error">{{ form.full_name.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                <div class="checkout-form-group">
+                    <label for="phone">Phone number</label>
+                    <input type="tel" id="phone" name="phone" class="Input" placeholder="+380991234567" value="{{ form.phone.value|default:profile.phone|default:'' }}" required>
+                    {% if form.phone.errors %}
+                    <span class="field-error">{{ form.phone.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                <div class="checkout-form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" name="city" class="Input" placeholder="Kyiv" value="{{ form.city.value|default:profile.city|default:'' }}" required>
+                    {% if form.city.errors %}
+                    <span class="field-error">{{ form.city.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                <div class="checkout-form-group">
+                    <label for="address">Shipping address</label>
+                    <textarea id="address" name="address" class="Textarea" placeholder="Street name, building/apartment number" rows="3" required>{{ form.address.value|default:profile.address|default:'' }}</textarea>
+                    {% if form.address.errors %}
+                    <span class="field-error">{{ form.address.errors.0 }}</span>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Payment Method -->
+            <section class="checkout-section">
+                <h2 class="checkout-section__title">Payment Method</h2>
+                <div class="payment-options">
+                    <label class="radio-option">
+                        <input type="radio" name="payment_method" value="debit" {% if form.payment_method.value == 'debit' or not form.payment_method.value %}checked{% endif %}>
+                        <span class="radio-custom"></span>
+                        <span class="radio-label">Debit Card</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="payment_method" value="wallet" {% if form.payment_method.value == 'wallet' %}checked{% endif %}>
+                        <span class="radio-custom"></span>
+                        <span class="radio-label">Digital Wallet</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="payment_method" value="cod" {% if form.payment_method.value == 'cod' %}checked{% endif %}>
+                        <span class="radio-custom"></span>
+                        <span class="radio-label">Cash On Delivery</span>
+                    </label>
+                </div>
+                {% if form.payment_method.errors %}
+                <span class="field-error">{{ form.payment_method.errors.0 }}</span>
+                {% endif %}
+            </section>
+
+            <!-- Order Summary -->
+            <section class="checkout-summary">
+                <h2 class="checkout-section__title">Order Summary</h2>
+                <div class="summary-details">
+                    <div class="summary-total">
+                        <p>Total</p>
+                        <p>${{ cart_total }}</p>
+                    </div>
+                    <button type="submit" class="button button--primary button--pay">Pay</button>
+                </div>
+            </section>
+        </form>
+    </div>
+</main>
+{% endblock %}

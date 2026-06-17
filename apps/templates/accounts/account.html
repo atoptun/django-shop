@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Account | Hop & Barley{% endblock %}
+
+{% block content %}
+<main class="account-page-wrapper">
+  <div class="account-container">
+    <!-- Tabs Navigation -->
+    <div class="account-tabs">
+      <button class="account-tab active" data-tab-target="#order-history">Order History</button>
+      <button class="account-tab" data-tab-target="#account-info">Account Information</button>
+    </div>
+
+    <!-- Tabs Content -->
+    <div class="tab-content">
+      <!-- Order History Panel -->
+      <div id="order-history" class="tab-pane active">
+        <div class="order-history-table">
+          <!-- Table Header -->
+          <div class="order-table-header">
+            <div class="order-table-cell">Order Details</div>
+            <div class="order-table-cell">Order Status</div>
+            <div class="order-table-cell">Total</div>
+          </div>
+          <!-- Table Body -->
+          <div class="order-table-body">
+            {% for order in orders %}
+            <div class="order-table-row">
+              <div class="order-table-cell">
+                <span class="order-id">#{{ order.id }}</span>
+                <span class="order-date">{{ order.created_at|date:"j M Y" }}</span>
+              </div>
+              <div class="order-table-cell">
+                <span class="order-status status-{{ order.status }}">{{ order.status|title }}</span>
+              </div>
+              <div class="order-table-cell">
+                <span class="order-total">${{ order.total_price }}</span>
+              </div>
+            </div>
+            {% empty %}
+            <div class="no-orders" style="padding: 2rem; text-align: center; opacity: 0.7;">
+              <p>You have not placed any orders yet.</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% if is_paginated %}
+        <div class="account-pagination">
+          {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}" class="pagination-link-account">← Previous</a>
+          {% else %}
+          <span class="pagination-link-account disabled">← Previous</span>
+          {% endif %}
+          
+          {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}" class="pagination-link-account">Next →</a>
+          {% else %}
+          <span class="pagination-link-account disabled">Next →</span>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Account Information Panel -->
+      <div id="account-info" class="tab-pane">
+        <div class="account-form-container">
+          <h2 class="account-form-title">Personal Info</h2>
+          <form id="account-info-form" method="POST" action="{% url 'account_update' %}">
+            {% csrf_token %}
+            {% if form.errors %}
+            <div class="form-errors" style="color: var(--error-color, red); margin-bottom: 1rem;">
+                <p>Please fix the errors below.</p>
+            </div>
+            {% endif %}
+            <div class="checkout-form-group">
+              <label for="acc-full-name">Full Name</label>
+              <input type="text" id="acc-full-name" name="full_name" class="Input" placeholder="John Doe" value="{{ user.get_full_name|default:'' }}" required>
+            </div>
+            <div class="checkout-form-group">
+              <label for="acc-phone">Phone number</label>
+              <input type="tel" id="acc-phone" name="phone" class="Input" placeholder="+380991234567" value="{{ profile.phone|default:'' }}" required>
+            </div>
+            <div class="checkout-form-group">
+              <label for="acc-email">Email</label>
+              <input type="email" id="acc-email" name="email" class="Input" placeholder="example@mail.com" value="{{ user.email|default:'' }}" required>
+            </div>
+            <div class="checkout-form-group">
+              <label for="acc-city">City</label>
+              <input type="text" id="acc-city" name="city" class="Input" placeholder="Kyiv" value="{{ profile.city|default:'' }}" required>
+            </div>
+            <div class="checkout-form-group">
+              <label for="acc-address">Shipping address</label>
+              <textarea id="acc-address" name="address" class="Textarea" placeholder="Shipping address details" rows="3" required>{{ profile.address|default:'' }}</textarea>
+            </div>
+            <button type="submit" class="button button--primary button--full-width" style="margin-bottom: 1rem;">Save</button>
+          </form>
+          
+          <form method="POST" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="button button--secondary button--full-width">Logout</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+{% endblock %}

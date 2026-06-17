@@ -24,6 +24,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "debugpy>=1.8.21",
+    "djlint>=1.39.2",
     "factory-boy>=3.3.3",
     "faker>=40.23.0",
     "pyright>=1.1.410",
@@ -67,3 +68,10 @@ dev = "python manage.py runserver"
 # lint = { composite = ["ruff check", "ruff format --check", "pyright"] }
 lint = "ruff check && ruff format --check && pyright"
 fix = "ruff check --fix && ruff format"
+
+[tool.djlint]
+profile = "django"
+indent = 2
+blank_line_after_tag = "load,extends"
+max_line_length = 120
+format_attribute_template_tags = true

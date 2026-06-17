@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Shopping Cart | Hop & Barley{% endblock %}
+
+{% block content %}
+<main class="cart-page-wrapper">
+  <div class="cart-container">
+    <h1 class="cart-title">Shopping Cart</h1>
+
+    <div class="cart-items-list" id="cart-items-list">
+      {% for item in cart_items %}
+      <div class="cart-item" data-item-id="{{ item.id }}" data-price="{{ item.product.price }}">
+        {% if item.product.image %}
+        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="cart-item__image">
+        {% else %}
+        <img src="{% static 'img/products/citra_hops.jpg' %}" alt="{{ item.product.name }}" class="cart-item__image">
+        {% endif %}
+        <div class="cart-item__body">
+          <div class="cart-item__details">
+            <h2 class="cart-item__name">{{ item.product.name }}</h2>
+            <div class="cart-item__price-info">
+              <p class="cart-item__price" data-item-total-price>
+                ${{ item.total_price }}
+              </p>
+              <span class="cart-item__price-tag">{% if item.product.price_tag %}{{ item.product.price_tag }}{% else %}per item{% endif %}</span>
+            </div>
+          </div>
+          <div class="cart-item__actions">
+            <div class="cart-item__quantity-selector">
+              <form method="POST" action="{% url 'update_cart' item.product.id %}" style="display: flex; align-items: center;">
+                {% csrf_token %}
+                <button type="submit" name="action" value="decrease" class="quantity-btn-cart" data-action="decrease"><i class="fa-solid fa-minus"></i></button>
+                <span class="quantity-value-cart">{{ item.quantity }}</span>
+                <button type="submit" name="action" value="increase" class="quantity-btn-cart" data-action="increase"><i class="fa-solid fa-plus"></i></button>
+              </form>
+            </div>
+            <form method="POST" action="{% url 'remove_from_cart' item.product.id %}">
+              {% csrf_token %}
+              <button type="submit" class="button--remove" data-action="remove">
+                Remove <i class="fa-solid fa-xmark"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-cart-message" style="text-align: center; padding: 3rem 0;">
+        <p style="margin-bottom: 1.5rem;">Your cart is currently empty.</p>
+        <a href="{% url 'catalog' %}" class="button button--primary">Shop Products</a>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if cart_items %}
+    <div class="cart-summary">
+      <div class="cart-summary__total">
+        <p>Total</p>
+        <p id="cart-total-price">${{ cart_total }}</p>
+      </div>
+      <a href="{% url 'checkout' %}" class="button button--primary button--checkout">Proceed to Checkout</a>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin - Product Stock | Hop & Barley{% endblock %}
+
+{% block content %}
+<main class="admin-page-wrapper">
+  <div class="admin-container">
+    <!-- Tabs Navigation -->
+    <div class="admin-tabs">
+      <a href="{% url 'admin_products' %}" class="admin-tab active">Product Management</a>
+      <a href="{% url 'admin_dashboard' %}" class="admin-tab">Dashboard</a>
+    </div>
+
+    <!-- Content Area -->
+    <div class="admin-content">
+      <h1 class="admin-content__title">Admin - Product Stock</h1>
+      <div class="admin-actions">
+        <a href="{% url 'admin_product_add' %}" class="button button--primary">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add Product</span>
+        </a>
+      </div>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+          <tr>
+            <th>id</th>
+            <th>name</th>
+            <th>description</th>
+            <th>price</th>
+            <th>category</th>
+            <th>created_at</th>
+            <th>updated_at</th>
+            <th>actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for product in products %}
+          <tr>
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.description|truncatewords:10 }}</td>
+            <td>${{ product.price }}</td>
+            <td>{{ product.category.name }}</td>
+            <td>{{ product.created_at|date:"Y-m-d" }}</td>
+            <td>{{ product.updated_at|date:"Y-m-d" }}</td>
+            <td><a href="{% url 'admin_product_edit' product.id %}" class="button button--edit">Edit</a></td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 2rem 0; opacity: 0.7;">No products found in the database.</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_paginated %}
+      <div class="account-pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="pagination-link-account">← Previous</a>
+        {% else %}
+        <span class="pagination-link-account disabled">← Previous</span>
+        {% endif %}
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="pagination-link-account">Next →</a>
+        {% else %}
+        <span class="pagination-link-account disabled">Next →</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</main>
+{% endblock %}
