@@ -71,16 +71,16 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Generate AsyncAPI documentation and place it in the shared volume for Nginx to serve
 # RUN uv run faststream docs gen --out /app/asyncapi_html app.stream_app:app
 
-# Use the non-root user to run our application
-USER nonroot
-
 # collect static files
 RUN python manage.py collectstatic --noinput
 
 # run migrations
 RUN python manage.py makemigrations
-RUN python manage.py migrate
+# RUN python manage.py migrate
+
+# Use the non-root user to run our application
+USER nonroot
 
 # run gunicorn
-CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
+# CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
 # CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker"]

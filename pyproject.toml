@@ -7,15 +7,25 @@ requires-python = ">=3.14"
 dependencies = [
     "django>=6.0.6",
     "django-compressor>=4.6.0",
+    "django-filter>=25.2",
     "django-ratelimit>=4.1.0",
     "django-static-precompiler>=2.4",
+    "django-stubs>=6.0.5",
+    "djangorestframework>=3.17.1",
+    "djangorestframework-simplejwt>=5.5.1",
+    "drf-spectacular>=0.29.0",
     "gunicorn>=26.0.0",
+    "psycopg2-binary>=2.9.12",
+    "pydantic-settings>=2.14.1",
+    "python-decouple>=3.8",
     "uvicorn>=0.49.0",
 ]
 
 [dependency-groups]
 dev = [
     "debugpy>=1.8.21",
+    "factory-boy>=3.3.3",
+    "faker>=40.23.0",
     "pyright>=1.1.410",
     "pytest>=9.1.0",
     "pytest-django>=4.12.0",
@@ -27,7 +37,7 @@ dev = [
 
 [tool.ruff]
 src = ["core", "apps"]
-line-length = 88
+line-length = 100
 target-version = "py313"
 
 [tool.ruff.lint]
@@ -40,7 +50,11 @@ max-complexity = 10
 
 [tool.pyright]
 include = ["core", "apps"]
-typeCheckingMode = "strict" # basic or strict
+typeCheckingMode = "basic" # basic or strict
+stubPath = ".venv/lib/python3.12/site-packages"
+
+[tool.django-stubs]
+django_settings_module = "core.settings"
 
 [tool.taskipy.tasks]
 # # Запуск сервера розробки
@@ -51,4 +65,5 @@ dev = "python manage.py runserver"
 
 # # Швидкі перевірки коду (лінтер + форматинг + типи)
 # lint = { composite = ["ruff check", "ruff format --check", "pyright"] }
-# fix = "ruff check --fix"
+lint = "ruff check && ruff format --check && pyright"
+fix = "ruff check --fix && ruff format"

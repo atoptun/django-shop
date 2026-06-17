@@ -11,11 +11,11 @@ services:
       target: development
     restart: on-failure
     command: >
-      sh -c "uv run manage.py makemigrations && 
-             uv run manage.py migrate &&
+      sh -c "uv run manage.py migrate &&
+             uv run manage.py setup_admin && 
              uv run python -m debugpy --listen 0.0.0.0:5678 -m manage runserver 0.0.0.0:8000"
     ports:
-      - "8000:8000" # django app
+      # - "8000:8000" # django app
       - "5678:5678" # debugpy
     environment:
       - LOG_FILE=/app/logs/api.log
@@ -38,15 +38,11 @@ services:
       watch:
         # Sync the working directory with the `/app` directory in the container
         - action: sync
-          path: ./app
-          target: /app/app
-          # Exclude the project virtual environment — it could be for a
-          # different platform in the container
-          ignore:
-            - .git/
-            - .venv/
-            - .vscode/
-            - logs/
+          path: ./apps
+          target: /app/apps
+        - action: sync
+          path: ./core
+          target: /app/core
         # Rebuild the image if dependencies change by checking uv.lock
         - action: rebuild
           path: ./uv.lock
@@ -60,6 +56,6 @@ services:
 
 volumes:
   pg_data:
-    name: ai_tg_postgres_dev_data
+    name: django_shop_postgres_dev_data
   pgadmin_data:
-    name: ai_tg_pgadmin_dev_data
+    name: django_shop_pgadmin_dev_data
