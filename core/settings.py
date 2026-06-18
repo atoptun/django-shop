@@ -51,6 +51,9 @@ INSTALLED_APPS = [
     "static_precompiler",
     # Local
     "core",
+    "apps.accounts.apps.AccountsConfig",
+    "apps.orders.apps.OrdersConfig",
+    "apps.products.apps.ProductsConfig",
 ]
 
 MIDDLEWARE = [
@@ -65,7 +68,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "core.urls"
 
-TEMPLATE_DIR = os.path.join(BASE_DIR, "apps/templates")
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 
 TEMPLATES = [  # type: ignore
     {
@@ -143,7 +146,7 @@ USE_TZ = True
 STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "apps/static"),
+    os.path.join(BASE_DIR, "static"),
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")

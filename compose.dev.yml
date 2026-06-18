@@ -2,6 +2,7 @@ services:
   nginx:
     volumes:
       - ./logs/dev/nginx:/var/log/nginx
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - app
 

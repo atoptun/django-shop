@@ -8,7 +8,7 @@
     <div class="checkout-container">
         <h1 class="checkout-title">Order Details</h1>
 
-        <form id="checkout-form" method="POST" action="{% url 'checkout' %}">
+        <form id="checkout-form" method="POST" action="{% url 'orders:checkout' %}">
             {% csrf_token %}
             <!-- Shipping Information -->
             <section class="checkout-section">

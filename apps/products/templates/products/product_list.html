@@ -5,14 +5,8 @@
 {% block title %}Products catalog | Hop & Barley{% endblock title %}
 {% block content %}
     <main>
-        <section class="hero-banner">
-            <img src="{% static 'img/background/hopfen-fields.jpg' %}"
-                 alt="Beautiful hops on a dark background"
-                 class="hero-banner__image"
-                 width="1312"
-                 height="400">
-            <div class="hero-banner__overlay"></div>
-        </section>
+        {% block hero_section %}
+        {% endblock hero_section %}
         <div class="container main-content-grid">
             <aside class="sidebar filter-menu">
                 <div class="sidebar__section">
@@ -58,7 +52,7 @@
             <section class="products-area product-grid-section">
                 <div class="search-sort-bar">
                     <form method="get"
-                          action="{% url 'catalog' %}"
+                          action="{% url 'catalog' as catalog_url___ %}"
                           class="search-input-wrapper">
                         <input type="text"
                                name="search"
@@ -96,13 +90,13 @@
                                          alt="{{ product.name }}"
                                          class="product-card__image"
                                          width="270"
-                                         height="247"/>
+                                         height="247" />
                                 {% else %}
                                     <img src="{% static 'img/products/citra_hops.jpg' %}"
                                          alt="{{ product.name }}"
                                          class="product-card__image"
                                          width="270"
-                                         height="247"/>
+                                         height="247" />
                                 {% endif %}
                                 <div class="product-card__info">
                                     <h4 class="product-card__name">{{ product.name }}</h4>
