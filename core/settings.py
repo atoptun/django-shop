@@ -32,6 +32,10 @@ ALLOWED_HOSTS = config.DJANGO_ALLOWED_HOSTS
 
 CSRF_TRUSTED_ORIGINS = [f"http://{host}" for host in ALLOWED_HOSTS]
 
+INTERNAL_IPS = [
+    "127.0.0.1",
+    "localhost",
+]
 
 # Application definition
 
@@ -49,11 +53,13 @@ INSTALLED_APPS = [
     "django_filters",
     "compressor",
     "static_precompiler",
+    "safedelete",
     # Local
     "core",
     "apps.accounts.apps.AccountsConfig",
     "apps.orders.apps.OrdersConfig",
     "apps.products.apps.ProductsConfig",
+    "apps.reviews.apps.ReviewsConfig",
 ]
 
 MIDDLEWARE = [
@@ -176,10 +182,17 @@ COMPRESS_PRECOMPILERS = (("text/x-scss", "django_libsass.SassCompiler"),)
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
+# LOGIN_URL = "accounts:login"
+# LOGIN_REDIRECT_URL = "products:list_home"
+# LOGOUT_REDIRECT_URL = "products:list_home"
 
 # Email
 if DEBUG:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+    EMAIL_FILE_PATH = BASE_DIR / "logs" / "sent_emails"
+    # EMAIL_FILE_PATH.mkdir(parents=True, exist_ok=True)
+    print(f"EMAIL_FILE_PATH: {EMAIL_FILE_PATH}")
 else:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"  # type: ignore
     EMAIL_HOST = config.EMAIL_HOST
@@ -226,3 +239,14 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+if DEBUG:
+    import socket
+    try:
+        hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+        for ip in ips:
+            prefix = ip.rsplit(".", 1)[0]
+            INTERNAL_IPS.append(f"{prefix}.1")
+        print(f"INTERNAL_IPS: {INTERNAL_IPS}")
+    except Exception:
+        pass

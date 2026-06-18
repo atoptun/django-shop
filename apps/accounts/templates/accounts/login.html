@@ -1,52 +1,60 @@
 {% extends 'base.html' %}
+
 {% load static %}
 
-{% block title %}Sign In | Hop & Barley{% endblock %}
-
+{% block title %}Sign In | Hop & Barley{% endblock title %}
 {% block content %}
-<main class="auth-page-wrapper">
-  <div class="auth-background">
-    <img src="{% static 'img/background/pattern.jpg' %}" alt="Background pattern">
-  </div>
-  <div class="auth-form-container">
-    <div class="auth-container auth-container--login">
-      <div class="Legend">
-        <h1 class="auth-title">Sign In</h1>
-      </div>
-
-      <form class="auth-form" id="login-form" method="POST" action="{% url 'login' %}">
-        {% csrf_token %}
-        
-        {% if form.errors or non_field_errors %}
-        <div class="form-errors" style="color: var(--error-color, red); margin-bottom: 1rem;">
-            <p>Invalid username or password.</p>
-        </div>
-        {% endif %}
-
-        <div class="InputField">
-          <label for="username">Username or Email</label>
-          <input type="text" id="username" name="username" class="Input" placeholder="Enter your username or email" value="{{ form.username.value|default:'' }}" required>
-        </div>
-        <div class="InputField">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" class="Input" placeholder="Enter your password" required>
-        </div>
-
-        {% if redirect_to %}
-        <input type="hidden" name="next" value="{{ redirect_to }}">
-        {% endif %}
-
-        <div class="ButtonGroup">
-          <button type="submit" class="button button--primary">Sign In</button>
-        </div>
-
-        <div class="TextLink">
-          <a href="{% url 'password_reset' %}">Forgot password?</a>
-        </div>
-      </form>
-
-      <p class="auth-switch">Don’t have an account? <a href="{% url 'register' %}">Sign up</a></p>
+  <main class="auth-page-wrapper">
+    <div class="auth-background">
+      <img src="{% static 'img/background/pattern.jpg' %}"
+           alt="Background pattern">
     </div>
-  </div>
-</main>
-{% endblock %}
+    <div class="auth-form-container">
+      <div class="auth-container auth-container--login">
+        <div class="Legend">
+          <h1 class="auth-title">Sign In</h1>
+        </div>
+        <form class="auth-form"
+              id="login-form"
+              method="post"
+              action="{% url 'accounts:login' %}">
+          {% csrf_token %}
+          {% if form.errors or non_field_errors %}
+            <div class="form-errors">
+              <p>Invalid email or password.</p>
+            </div>
+          {% endif %}
+          <div class="InputField">
+            <label for="username">Email</label>
+            <input type="text"
+                   id="username"
+                   name="username"
+                   class="Input"
+                   placeholder="Enter your email"
+                   value="{{ form.username.value|default:'' }}"
+                   required>
+          </div>
+          <div class="InputField">
+            <label for="password">Password</label>
+            <input type="password"
+                   id="password"
+                   name="password"
+                   class="Input"
+                   placeholder="Enter your password"
+                   required>
+          </div>
+          {% if redirect_to %}
+            <input type="hidden" name="next" value="{{ redirect_to }}">
+          {% endif %}
+          <div class="ButtonGroup">
+            <button type="submit" class="button button--primary">Sign In</button>
+          </div>
+          <div class="TextLink">
+            <a href="{% url 'accounts:password_reset' %}">Forgot password?</a>
+          </div>
+        </form>
+        <p class="auth-switch">Don’t have an account? <a href="{% url 'accounts:register' %}">Sign up</a></p>
+      </div>
+    </div>
+  </main>
+{% endblock content %}

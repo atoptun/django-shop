@@ -13,3 +13,11 @@
     </nav>
     <p class="footer__copyright">© Hop & Barley 2025. All rights reserved</p>
 </footer>
+{% if user.is_superuser %}
+    <!-- Debug Panel -->
+    <div class="footer__debug_panel">
+        <p>Debug Panel: User is superuser</p>
+        <p>Username: {{ user.username }}</p>
+        <p>Email: {{ user.email }}</p>
+    </div>
+{% endif %}

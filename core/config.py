@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     log_file: str = ""
 
     # Django settings
-    DJANGO_SECRET_KEY: str = "django-insecure-dev-key-change-in-production"
+    DJANGO_SECRET_KEY: str = ""
     DJANGO_ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1"]
 
     DJANGO_SUPERUSER_USERNAME: str = "admin"

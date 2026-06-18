@@ -62,7 +62,6 @@ doc-logs-prod: ## View container logs (Usage: make doc-logs-prod api)
 # =============================================================================
 
 db-migrate: ## Generate a local migration script (Usage: make db-migrate m="migration description")
-	@if [ -z "$(m)" ]; then echo "Error: Please specify a migration message. Example: make db-migrate m='init tables'"; exit 1; fi
 	POSTGRES_HOST=$(LOCAL_DB_HOST) POSTGRES_PORT=$(LOCAL_DB_PORT) uv run manage.py makemigrations
 
 db-upgrade: ## Apply all pending migrations to the local database
