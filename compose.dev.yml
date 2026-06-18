@@ -44,10 +44,15 @@ services:
         - action: sync
           path: ./core
           target: /app/core
+        - action: sync
+          path: ./static
+          target: /app/static
+        - action: sync
+          path: ./templates
+          target: /app/templates
         # Rebuild the image if dependencies change by checking uv.lock
         - action: rebuild
           path: ./uv.lock
-
 
   postgres:
     environment:
