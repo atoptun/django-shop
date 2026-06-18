@@ -28,7 +28,7 @@
         </div>
         <!-- Container for managing the cart -->
         <div class="cart-controls">
-          <form method="post" action="{% url 'add_to_cart' product.id %}" id="add-to-cart-form">
+          <form method="post" action="{% url 'add_to_cart' product.id as add_to_cart_url___ %}" id="add-to-cart-form">
             {% csrf_token %}
             <!-- Add to Cart button (visible by default) -->
             <button type="submit" class="button button--primary add-to-cart-button" id="add-to-cart-btn">
