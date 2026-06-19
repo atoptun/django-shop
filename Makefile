@@ -25,19 +25,26 @@ doc-start-dev: ## Start the development environment with hot-reloading
 doc-stop-dev: ## Stop the development environment
 	docker compose -p $(DOCKER_DEV_PROJECT_NAME) --env-file .env -f compose.yml -f compose.dev.yml down --remove-orphans
 
-doc-restart-dev: ## Restart container (Usage: make doc-restart-dev api)
+doc-restart-dev: ## Restart container (Usage: make doc-restart-dev app)
 	@# Filter out the command name itself, leaving only the container name
 	$(eval CONTAINER := $(filter-out doc-restart-dev,$(MAKECMDGOALS)))
-	@# If no container was provided, default to 'api'
-	$(eval CONTAINER_NAME := $(if $(CONTAINER),$(CONTAINER),api))
+	@# If no container was provided, default to 'app'
+	$(eval CONTAINER_NAME := $(if $(CONTAINER),$(CONTAINER),app))
 	docker compose -p $(DOCKER_DEV_PROJECT_NAME) restart  $(CONTAINER_NAME)
 
-doc-logs-dev: ## View container logs (Usage: make doc-logs-dev api)
+doc-logs-dev: ## View container logs (Usage: make doc-logs-dev app)
 	@# Filter out the command name itself, leaving only the container name
 	$(eval CONTAINER := $(filter-out doc-logs-dev,$(MAKECMDGOALS)))
-	@# If no container was provided, default to 'api'
-	$(eval CONTAINER_NAME := $(if $(CONTAINER),$(CONTAINER),api))
+	@# If no container was provided, default to 'app'
+	$(eval CONTAINER_NAME := $(if $(CONTAINER),$(CONTAINER),app))
 	docker compose -p $(DOCKER_DEV_PROJECT_NAME) logs -f $(CONTAINER_NAME)
+
+doc-shell-dev: ## Open a shell inside the development container (Usage: make doc-shell-dev app)
+	@# Filter out the command name itself, leaving only the container name
+	$(eval CONTAINER := $(filter-out doc-shell-dev,$(MAKECMDGOALS)))
+	@# If no container was provided, default to 'app'
+	$(eval CONTAINER_NAME := $(if $(CONTAINER),$(CONTAINER),app))
+	docker compose -p $(DOCKER_DEV_PROJECT_NAME) exec $(CONTAINER_NAME) /bin/bash
 
 # =============================================================================
 # PRODUCTION ENVIRONMENT

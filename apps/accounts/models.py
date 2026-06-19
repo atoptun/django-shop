@@ -6,10 +6,15 @@ from phonenumber_field.modelfields import PhoneNumberField
 from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
+from apps.orders.models import Order
+from apps.reviews.models import Review
+
 
 class User(AbstractUser, SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
-    profile: "Profile"  # hints user.profile
+    profile: "Profile"
+    orders: models.QuerySet["Order"]
+    reviews: models.QuerySet["Review"]
 
     class Meta:
         db_table = "auth_user"
