@@ -65,3 +65,5 @@ volumes:
     name: django_shop_postgres_dev_data
   pgadmin_data:
     name: django_shop_pgadmin_dev_data
+  static_volume:
+    name: django_shop_staticfiles_dev_data

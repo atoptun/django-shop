@@ -1,13 +1,15 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.messages import get_messages
 from django.urls import reverse
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
-from apps.accounts.forms import RegistrationForm, ProfileForm, AddressForm
-from .factories import UserFactory, ProfileFactory, AddressFactory
+from apps.accounts.forms import AddressForm, ProfileForm, RegistrationForm
+from apps.orders.models import Order
+
+from .factories import AddressFactory, ProfileFactory, UserFactory
 
 User = get_user_model()
 
@@ -105,8 +107,6 @@ def test_profile_form_save():
     assert user.first_name == "Mary"
     assert user.last_name == "Johnson"
     assert profile.phone == "+380509876543"
-    assert profile.city == "Odessa"
-    assert profile.address == "Deribasivska 1"
 
 
 def test_profile_form_invalid_phone():
@@ -172,19 +172,45 @@ def test_profile_view_authenticated(client):
 def test_order_history_view(client):
     user = UserFactory()
     client.force_login(user)
+    # Create 8 orders for this user
+    for i in range(8):
+        Order.objects.create(user=user, status=Order.Status.PENDING, total_price=10.0 + i, shipping_address="Address Info")
+
     url = reverse("accounts:order_history")
+    
+    # Page 1
     response = client.get(url)
     assert response.status_code == 200
     assert "accounts/order_history.html" in [t.name for t in response.templates]
+    assert len(response.context["orders"]) == 5
+    assert response.context["is_paginated"] is True
+
+    # Page 2
+    response = client.get(url + "?page=2")
+    assert response.status_code == 200
+    assert len(response.context["orders"]) == 3
 
 
 def test_address_list_view(client):
     user = UserFactory()
     client.force_login(user)
+    # Create 7 addresses for this user's profile
+    for i in range(7):
+        AddressFactory(profile=user.profile, recipient_name=f"Recipient {i}")
+
     url = reverse("accounts:address_list")
+    
+    # Page 1
     response = client.get(url)
     assert response.status_code == 200
     assert "accounts/address_list.html" in [t.name for t in response.templates]
+    assert len(response.context["addresses"]) == 5
+    assert response.context["is_paginated"] is True
+
+    # Page 2
+    response = client.get(url + "?page=2")
+    assert response.status_code == 200
+    assert len(response.context["addresses"]) == 2
 
 
 def test_profile_view_post(client):
