@@ -1,15 +1,18 @@
+from typing import cast
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy, reverse
-from django.views.generic import TemplateView, ListView
-from django.views.generic.edit import FormView, UpdateView, CreateView, DeleteView
+from django.urls import reverse, reverse_lazy
+from django.views.generic import ListView
+from django.views.generic.edit import CreateView, DeleteView, FormView, UpdateView
 
 from apps.orders.models import Order
-from .forms import RegistrationForm, ProfileForm, AddressForm
-from .models import Address, User
+from core.types import AuthenticatedRequest
+
+from .forms import AddressForm, ProfileForm, RegistrationForm
+from .models import Address
 
 
 class RegisterView(FormView):
@@ -44,19 +47,19 @@ class OrderHistoryView(LoginRequiredMixin, ListView):
     paginate_by = 5
 
     def get_queryset(self):
-        if hasattr(self.request.user, "orders"):
-            return self.request.user.orders.all().order_by("-created_at")
-        return Order.objects.none()
+        request = cast(AuthenticatedRequest, self.request)
+        return request.user.orders.all().order_by("-created_at")
 
 
 class AddressListView(LoginRequiredMixin, ListView):
     model = Address
     template_name = "accounts/address_list.html"
     context_object_name = "addresses"
-    paginate_by = 5
+    paginate_by = 10
 
     def get_queryset(self):
-        return Address.objects.filter(profile=self.request.user.profile).order_by("-created_at")
+        request = cast(AuthenticatedRequest, self.request)
+        return Address.objects.filter(profile=request.user.profile).order_by("-created_at")
 
 
 class AddressCreateView(LoginRequiredMixin, CreateView):
@@ -65,7 +68,8 @@ class AddressCreateView(LoginRequiredMixin, CreateView):
     template_name = "accounts/address_form.html"
 
     def form_valid(self, form):
-        form.instance.profile = self.request.user.profile
+        request = cast(AuthenticatedRequest, self.request)
+        form.instance.profile = request.user.profile
         messages.success(self.request, "Address added successfully!")
         return super().form_valid(form)
 
@@ -79,7 +83,8 @@ class AddressUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "accounts/address_form.html"
 
     def get_queryset(self):
-        return Address.objects.filter(profile=self.request.user.profile)
+        request = cast(AuthenticatedRequest, self.request)
+        return Address.objects.filter(profile=request.user.profile)
 
     def form_valid(self, form):
         messages.success(self.request, "Address updated successfully!")
@@ -94,7 +99,8 @@ class AddressDeleteView(LoginRequiredMixin, DeleteView):
     template_name = "accounts/address_confirm_delete.html"
 
     def get_queryset(self):
-        return Address.objects.filter(profile=self.request.user.profile)
+        request = cast(AuthenticatedRequest, self.request)
+        return Address.objects.filter(profile=request.user.profile)
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Address deleted successfully!")

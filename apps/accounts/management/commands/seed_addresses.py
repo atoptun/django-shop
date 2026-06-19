@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.core.management.base import BaseCommand, CommandParser
 from faker import Faker
 
@@ -11,17 +13,22 @@ class Command(BaseCommand):
         parser.add_argument(
             "--username",
             type=str,
-            help=str(
-                (
-                    "The username of the user to seed addresses for.",
-                    " If not provided, seeds for the first user/profile found.",
-                )
+            help=(
+                "The username of the user to seed addresses for."
+                " If not provided, seeds for the first user/profile found."
             ),
         )
+        parser.add_argument(
+            "--quantity",
+            type=int,
+            default=20,
+            help=("The number of fake addresses to seed. Default is 20 addresses."),
+        )
 
-    def handle(self, *args, **options: dict[str, str]) -> None:
+    def handle(self, *args, **options: dict[str, Any]) -> None:
         fake = Faker()
         username = options.get("username")
+        quantity: int = options["quantity"]  # type: ignore[assignment]
 
         if username:
             try:
@@ -32,28 +39,18 @@ class Command(BaseCommand):
                 )
                 return
         else:
-            user = User.objects.first()
-            if not user:
-                self.stdout.write(
-                    self.style.WARNING("No user found. Creating a dummy seed user 'seed_user'...")
-                )
-                user = User.objects.create_user(
-                    username="seed_user",
-                    email="seed_user@example.com",
-                    password="password123",
-                    first_name="Seed",
-                    last_name="User",
-                )
+            self.stdout.write(self.style.ERROR("User required."))
+            return
 
         profile = user.profile
         self.stdout.write(
             self.style.NOTICE(
-                f"Seeding 20 fake addresses for user '{user.username}' (Profile ID: {profile.pk})..."
+                f"Seeding {quantity} fake addresses for user '{user.username}' (Profile ID: {profile.pk})..."
             )
         )
 
         created_count = 0
-        for _ in range(20):
+        for _ in range(quantity):
             # Generate a valid E.164 phone number
             phone_num = f"+38050{fake.random_number(digits=7, fix_len=True)}"
 

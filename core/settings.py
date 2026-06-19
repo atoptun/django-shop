@@ -195,7 +195,7 @@ if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
     EMAIL_FILE_PATH = BASE_DIR / "logs" / "sent_emails"
     # EMAIL_FILE_PATH.mkdir(parents=True, exist_ok=True)
-    print(f"EMAIL_FILE_PATH: {EMAIL_FILE_PATH}")
+    # print(f"EMAIL_FILE_PATH: {EMAIL_FILE_PATH}")
 else:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"  # type: ignore
     EMAIL_HOST = config.EMAIL_HOST
@@ -250,6 +250,6 @@ if DEBUG:
         for ip in ips:
             prefix = ip.rsplit(".", 1)[0]
             INTERNAL_IPS.append(f"{prefix}.1")
-        print(f"INTERNAL_IPS: {INTERNAL_IPS}")
+        # print(f"INTERNAL_IPS: {INTERNAL_IPS}")
     except Exception:
         pass
