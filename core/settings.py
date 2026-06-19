@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "compressor",
     "static_precompiler",
     "safedelete",
+    "phonenumber_field",
     # Local
     "core",
     "apps.accounts.apps.AccountsConfig",

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 
-from .models import Profile
+from .models import Profile, Address
 
 
 class RegistrationForm(forms.ModelForm):
@@ -61,17 +61,22 @@ class ProfileForm(forms.ModelForm):
         widget=forms.TextInput(attrs={"class": "Input", "placeholder": "Doe"}),
     )
 
-    field_order = ["email", "first_name", "last_name", "phone", "city", "address"]
+    field_order = ["email", "first_name", "last_name", "phone"]
 
     class Meta:
         model = Profile
-        fields = ["phone", "city", "address"]
+        fields = ["phone"]
         widgets = {
-            "phone": forms.TextInput(attrs={"class": "Input", "placeholder": "+380991234567"}),
-            "city": forms.TextInput(attrs={"class": "Input", "placeholder": "Kyiv"}),
-            "address": forms.Textarea(
-                attrs={"class": "Input", "rows": 3, "placeholder": "Post address"}
-            ),
+            "phone": forms.TextInput(attrs={
+                "class": "Input",
+                "placeholder": "+380991234567",
+                "pattern": r"^\+?[1-9]\d{9,14}$",
+                "title": "Please enter a valid international phone number (e.g. +380991234567)"
+            }),
+            # "city": forms.TextInput(attrs={"class": "Input", "placeholder": "Kyiv"}),
+            # "address": forms.Textarea(
+            #     attrs={"class": "Input", "rows": 3, "placeholder": "Post address"}
+            # ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -93,3 +98,24 @@ class ProfileForm(forms.ModelForm):
         if commit:
             profile.save()
         return profile
+
+
+class AddressForm(forms.ModelForm):
+    class Meta:
+        model = Address
+        fields = ["recipient_name", "phone", "city", "address_line", "is_default"]
+        widgets = {
+            "recipient_name": forms.TextInput(attrs={"class": "Input", "placeholder": "John Doe"}),
+            "phone": forms.TextInput(attrs={
+                "class": "Input",
+                "placeholder": "+380991234567",
+                "pattern": r"^\+?[1-9]\d{9,14}$",
+                "title": "Please enter a valid international phone number (e.g. +380991234567)"
+            }),
+            "city": forms.TextInput(attrs={"class": "Input", "placeholder": "Kyiv"}),
+            "address_line": forms.Textarea(
+                attrs={"class": "Input", "rows": 3, "placeholder": "Khreshchatyk St, 1, apt 10"}
+            ),
+            "is_default": forms.CheckboxInput(attrs={"class": "Checkbox"}),
+        }
+

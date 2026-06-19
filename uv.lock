@@ -131,6 +131,18 @@ wheels = [
 ]
 
 [[package]]
+name = "django-phonenumber-field"
+version = "8.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/87/bf/8aa60c9834773b955dff1ddea842e361e8daaf6b0945d5bfc29fc66d53ab/django_phonenumber_field-8.4.0.tar.gz", hash = "sha256:2b83e843dac35eec6a69880a166487235b737a71a1e38c9a52e5ad67d6996083", size = 45512, upload-time = "2025-11-24T15:09:51.904Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/a3/f6b85a9246e22cf719752ad83f5e95aa9ba12419b2f9eff70f20d30e55df/django_phonenumber_field-8.4.0-py3-none-any.whl", hash = "sha256:7a1cb3a6456edb54d879f11ffa0acb227ded08c93b587035d0f28093f0e46511", size = 69528, upload-time = "2025-11-24T15:09:45.479Z" },
+]
+
+[[package]]
 name = "django-ratelimit"
 version = "4.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -160,6 +172,7 @@ dependencies = [
     { name = "django" },
     { name = "django-compressor" },
     { name = "django-filter" },
+    { name = "django-phonenumber-field" },
     { name = "django-ratelimit" },
     { name = "django-safedelete" },
     { name = "django-static-precompiler" },
@@ -168,6 +181,7 @@ dependencies = [
     { name = "djangorestframework-simplejwt" },
     { name = "drf-spectacular" },
     { name = "gunicorn" },
+    { name = "phonenumbers" },
     { name = "pillow" },
     { name = "psycopg2-binary" },
     { name = "pydantic-settings" },
@@ -195,6 +209,7 @@ requires-dist = [
     { name = "django", specifier = ">=6.0.6" },
     { name = "django-compressor", specifier = ">=4.6.0" },
     { name = "django-filter", specifier = ">=25.2" },
+    { name = "django-phonenumber-field", specifier = ">=8.4.0" },
     { name = "django-ratelimit", specifier = ">=4.1.0" },
     { name = "django-safedelete", specifier = ">=1.4.1" },
     { name = "django-static-precompiler", specifier = ">=2.4" },
@@ -203,6 +218,7 @@ requires-dist = [
     { name = "djangorestframework-simplejwt", specifier = ">=5.5.1" },
     { name = "drf-spectacular", specifier = ">=0.29.0" },
     { name = "gunicorn", specifier = ">=26.0.0" },
+    { name = "phonenumbers", specifier = ">=9.0.32" },
     { name = "pillow", specifier = ">=12.2.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.12" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
@@ -501,6 +517,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5a/82/42f767fc1c1143d6fd36efb827202a2d997a375e160a71eb2888a925aac1/pathspec-1.1.1.tar.gz", hash = "sha256:17db5ecd524104a120e173814c90367a96a98d07c45b2e10c2f3919fff91bf5a", size = 135180, upload-time = "2026-04-27T01:46:08.907Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl", hash = "sha256:a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189", size = 57328, upload-time = "2026-04-27T01:46:07.06Z" },
+]
+
+[[package]]
+name = "phonenumbers"
+version = "9.0.32"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ef/11/ba7611cadc8c99b797416d0dada535c02890dc21b759dfef60a3751d2e20/phonenumbers-9.0.32.tar.gz", hash = "sha256:108ad0237202d2f6cf4b342fac411f22808d85187c3a366152a2af7ed3202a8e", size = 2306598, upload-time = "2026-06-05T05:48:38.909Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c6/e9/1ca526105e792b7ed752fd0ff5732ab01185f2deb719ae6f30183fb21143/phonenumbers-9.0.32-py2.py3-none-any.whl", hash = "sha256:fbcd40d3b11920ee77b1d34a54c3b64c6648a90b8e37222eb62e7fafb87db3e7", size = 2595438, upload-time = "2026-06-05T05:48:36.066Z" },
 ]
 
 [[package]]

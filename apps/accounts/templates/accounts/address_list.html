@@ -1,0 +1,37 @@
+{% extends "accounts/profile_base.html" %}
+
+{% block account_title %}Saved Addresses{% endblock account_title %}
+{% block tab_content %}
+  <div class="address-list-container">
+    <h2 class="account-form-title address-list-title">Addresses</h2>
+    <div class="address-grid">
+      {% for address in addresses %}
+        <div class="address-card">
+          {% if address.is_default %}
+            <span class="address-card__badge">Default</span>
+          {% endif %}
+          <h3 class="address-card__title">{{ address.recipient_name }}</h3>
+          <p class="address-card__text"><strong>Phone:</strong> {{ address.phone }}</p>
+          <p class="address-card__text"><strong>City:</strong> {{ address.city }}</p>
+          <p class="address-card__text"><strong>Address:</strong> {{ address.address_line }}</p>
+          <div class="address-actions">
+            <a href="{% url 'accounts:address_edit' address.pk %}"
+               class="button button--secondary">Edit</a>
+            <a href="{% url 'accounts:address_delete' address.pk %}"
+               class="button button--danger">Delete</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="no-addresses">
+          <p>You have no saved addresses yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="address-list-actions">
+      <a href="{% url 'accounts:address_add' %}"
+         class="button button--primary button--full-width address-add-btn">Add New Address</a>
+    </div>
+  </div>
+  {% block tab_content_end %}
+  {% endblock tab_content_end %}
+{% endblock tab_content %}
