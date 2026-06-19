@@ -673,9 +673,9 @@ footer {
 }
 
 .Input[readonly] {
-    color: #777777;
-    cursor: not-allowed;
-    border-color: #dddddd;
+  color: #777777;
+  cursor: not-allowed;
+  border-color: #dddddd;
 }
 
 .field-error {
@@ -685,11 +685,15 @@ footer {
 
 .form-errors {
   color: var(--error-color, red);
-  margin-bottom: 1rem
+  margin-bottom: 1rem;
 }
 
 .CheckboxField {
-  width: 100%;
+  /* width: 100%; */
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .CheckboxField .checkbox-container {
@@ -1635,6 +1639,9 @@ body.user-logged-in .header__user-actions {
   padding: 12px;
 }
 
+.account-form-actions {
+  margin-top: 1rem;
+}
 /*
 ========================================
     Admin Panel Styles
@@ -2011,4 +2018,171 @@ body.user-logged-in .header__user-actions {
 .static-page-content .button {
   height: 44px;
   padding: 0 32px;
+}
+
+/*
+========================================
+    Address Management Styles
+========================================
+*/
+
+.address-list-container {
+  padding: 24px;
+  background-color: var(--background-default);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.address-list-title {
+  /* margin-bottom: 1.5rem; */
+}
+
+.address-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.address-list-actions{
+  margin-top: 2rem;
+}
+
+.address-card {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  border-radius: 8px;
+  position: relative;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.address-card__badge {
+  background: #28a745;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.address-card__title {
+  margin-top: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding-right: 4rem;
+}
+
+.address-card__text {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.no-addresses {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  opacity: 0.7;
+}
+
+.address-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.address-actions .button--secondary {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.address-actions .button--danger {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  background-color: #dc3545;
+  color: #fff;
+  text-decoration: none;
+}
+
+.address-actions .button--danger:hover {
+  background-color: #c82333;
+}
+
+.address-add-btn {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+  border-radius: 4px;
+}
+
+/* Address form container & alignment */
+.address-form-wrapper {
+  padding: 24px;
+  background-color: var(--background-default);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.address-form-field {
+  /* margin-bottom: 1.25rem; */
+}
+
+.address-form-field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.address-form-field .field-error {
+  color: #dc3545;
+  font-size: 0.85rem;
+}
+
+.address-form-errors {
+  color: #dc3545;
+  margin-bottom: 1rem;
+}
+
+.address-form-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.address-form-buttons .button {
+  flex: 1;
+}
+
+.address-form-buttons .button--secondary {
+  text-align: center;
+  text-decoration: none;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.address-confirm-container {
+  text-align: center;
+}
+
+.address-confirm-title {
+  margin-bottom: 2rem;
+}
+
+.address-confirm-text {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
 }

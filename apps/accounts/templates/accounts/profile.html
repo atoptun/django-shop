@@ -1,98 +1,31 @@
-{% extends "base.html" %}
+{% extends "accounts/profile_base.html" %}
 
-{% load static %}
+{% block account_title %}Account Information{% endblock account_title %}
 
-{% block title %}My Account | Hop & Barley{% endblock title %}
-{% block content %}
-  <main class="account-page-wrapper">
-    <div class="account-container">
-      <!-- Tabs Navigation -->
-      <div class="account-tabs">
-        <button class="account-tab active" data-tab-target="#order-history">Order History</button>
-        <button class="account-tab" data-tab-target="#account-info">Account Information</button>
-      </div>
-      <!-- Tabs Content -->
-      <div class="tab-content">
-        <!-- Order History Panel -->
-        <div id="order-history" class="tab-pane active">
-          <div class="order-history-table">
-            <!-- Table Header -->
-            <div class="order-table-header">
-              <div class="order-table-cell">Order Details</div>
-              <div class="order-table-cell">Order Status</div>
-              <div class="order-table-cell">Total</div>
-            </div>
-            <!-- Table Body -->
-            <div class="order-table-body">
-              {% for order in orders %}
-                <div class="order-table-row">
-                  <div class="order-table-cell">
-                    <span class="order-id">#{{ order.id }}</span>
-                    <span class="order-date">{{ order.created_at|date:"j M Y" }}</span>
-                  </div>
-                  <div class="order-table-cell">
-                    <span class="order-status status-{{ order.status }}">{{ order.status|title }}</span>
-                  </div>
-                  <div class="order-table-cell">
-                    <span class="order-total">${{ order.total_price }}</span>
-                  </div>
-                </div>
-              {% empty %}
-                <div class="no-orders"
-                     style="padding: 2rem;
-                            text-align: center;
-                            opacity: 0.7">
-                  <p>You have not placed any orders yet.</p>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% if is_paginated %}
-            <div class="account-pagination">
-              {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}"
-                   class="pagination-link-account">← Previous</a>
-              {% else %}
-                <span class="pagination-link-account disabled">← Previous</span>
-              {% endif %}
-              {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}"
-                   class="pagination-link-account">Next →</a>
-              {% else %}
-                <span class="pagination-link-account disabled">Next →</span>
-              {% endif %}
-            </div>
+{% block tab_content %}
+  <div class="account-form-container">
+    <h2 class="account-form-title">Personal Info</h2>
+    <form id="account-info-form" method="post" action="{% url 'accounts:profile' %}">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="InputField">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <span class="field-error">{{ field.errors.0 }}</span>
           {% endif %}
         </div>
-        <!-- Account Information Panel -->
-        <div id="account-info" class="tab-pane">
-          <div class="account-form-container">
-            <h2 class="account-form-title">Personal Info</h2>
-            <form id="account-info-form"
-                  method="post"
-                  action="{% url 'accounts:profile' %}">
-              {% csrf_token %}
-              {% for field in form %}
-                <div class="InputField">
-                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                  {{ field }}
-                  {% if field.errors %}
-                    <span class="field-error">{{ field.errors.0 }}</span>
-                  {% endif %}
-                </div>
-              {% endfor %}
-              {% if form.non_field_errors %}
-                <div class="form-errors">{{ form.non_field_errors.0 }}</div>
-              {% endif %}
-              <button type="submit" class="button button--primary button--full-width">Save</button>
-            </form>
-            <form method="post" action="{% url 'accounts:logout' %}">
-              {% csrf_token %}
-              <button type="submit" class="button button--secondary button--full-width">Logout</button>
-            </form>
-          </div>
-        </div>
+      {% endfor %}
+      {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+      <div class="account-form-actions">
+      <button type="submit" class="button button--primary button--full-width">Save</button>
       </div>
-    </div>
-  </main>
-{% endblock content %}
+    </form>
+    <form method="post" action="{% url 'accounts:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="button button--secondary button--full-width">Logout</button>
+    </form>
+  </div>
+{% endblock tab_content %}

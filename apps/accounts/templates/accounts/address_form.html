@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  {% if object %}
+    Edit Address
+  {% else %}
+    Add Address
+  {% endif %}
+  | Hop & Barley
+{% endblock title %}
+{% block content %}
+  <main class="account-page-wrapper">
+    <div class="account-container">
+      <div class="address-form-wrapper">
+        <div class="Legend">
+          <h1 class="auth-title">
+            {% if object %}
+              Edit Address
+            {% else %}
+              Add Address
+            {% endif %}
+          </h1>
+        </div>
+        <form method="post" class="auth-form">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="
+                        {% if field.widget_type == 'checkbox' %}
+                          CheckboxField
+                        {% else %}
+                          InputField
+                        {% endif %}
+                        ">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}
+                <span class="field-error">{{ field.errors.0 }}</span>
+              {% endif %}
+            </div>
+          {% endfor %}
+          {% if form.non_field_errors %}
+            <div class="form-errors address-form-errors">{{ form.non_field_errors.0 }}</div>
+          {% endif %}
+          <div class="ButtonGroup address-form-buttons">
+            <button type="submit" class="button button--primary">Save Address</button>
+            <a href="{% url 'accounts:profile' %}#saved-addresses"
+               class="button button--secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+{% endblock content %}

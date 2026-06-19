@@ -1,0 +1,54 @@
+{% extends "accounts/profile_base.html" %}
+
+{% block account_title %}Order History{% endblock account_title %}
+
+{% block tab_content %}
+  <div class="order-history-table">
+    <!-- Table Header -->
+    <div class="order-table-header">
+      <div class="order-table-cell">Order Details</div>
+      <div class="order-table-cell">Order Status</div>
+      <div class="order-table-cell">Total</div>
+    </div>
+    <!-- Table Body -->
+    <div class="order-table-body">
+      {% for order in orders %}
+        <div class="order-table-row">
+          <div class="order-table-cell">
+            <span class="order-id">#{{ order.id }}</span>
+            <span class="order-date">{{ order.created_at|date:"j M Y" }}</span>
+          </div>
+          <div class="order-table-cell">
+            <span class="order-status status-{{ order.status }}">{{ order.status|title }}</span>
+          </div>
+          <div class="order-table-cell">
+            <span class="order-total">${{ order.total_price }}</span>
+          </div>
+        </div>
+      {% empty %}
+        <div class="no-orders"
+             style="padding: 2rem;
+                    text-align: center;
+                    opacity: 0.7">
+          <p>You have not placed any orders yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% if is_paginated %}
+    <div class="account-pagination">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}"
+           class="pagination-link-account">← Previous</a>
+      {% else %}
+        <span class="pagination-link-account disabled">← Previous</span>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}"
+           class="pagination-link-account">Next →</a>
+      {% else %}
+        <span class="pagination-link-account disabled">Next →</span>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock tab_content %}

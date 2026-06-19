@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Delete Address | Hop & Barley{% endblock title %}
+{% block content %}
+  <main class="account-page-wrapper">
+    <div class="account-container">
+      <div class="address-form-wrapper">
+        <div class="Legend address-confirm-title">
+          <h1 class="auth-title">Delete Address</h1>
+        </div>
+        <p class="address-confirm-text">
+          Are you sure you want to delete the address?
+          <br>
+          <br>
+          <strong>{{ object.recipient_name }}</strong>
+          <br>
+          {{ object.city }},
+          <br>
+          {{ object.address_line }}
+        </p>
+        <form method="post" class="auth-form">
+          {% csrf_token %}
+          <div class="ButtonGroup address-form-buttons">
+            <button type="submit" class="button button--danger">Delete</button>
+            <a href="{% url 'accounts:address_list' %}"
+               class="button button--secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+{% endblock content %}

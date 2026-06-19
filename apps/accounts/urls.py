@@ -1,11 +1,9 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path, reverse_lazy
-from django.views.generic import TemplateView
 
-from .views import ProfileView, RegisterView
+from . import views
 
 app_name = "accounts"
-
 
 urlpatterns = [
     # Web - auth
@@ -19,19 +17,40 @@ urlpatterns = [
     path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),
     path(
         "accounts/register/",
-        RegisterView.as_view(),
+        views.RegisterView.as_view(),
         name="register",
     ),
     # Web - account
     path(
         "account/profile/",
-        ProfileView.as_view(),
+        views.ProfileView.as_view(),
         name="profile",
     ),
     path(
         "account/orders/",
-        TemplateView.as_view(template_name="accounts/order_history.html"),
+        views.OrderHistoryView.as_view(),
         name="order_history",
+    ),
+    # Web - addresses
+    path(
+        "account/addresses/",
+        views.AddressListView.as_view(),
+        name="address_list",
+    ),
+    path(
+        "account/addresses/add/",
+        views.AddressCreateView.as_view(),
+        name="address_add",
+    ),
+    path(
+        "account/addresses/<int:pk>/edit/",
+        views.AddressUpdateView.as_view(),
+        name="address_edit",
+    ),
+    path(
+        "account/addresses/<int:pk>/delete/",
+        views.AddressDeleteView.as_view(),
+        name="address_delete",
     ),
     # Web - password reset
     path(
