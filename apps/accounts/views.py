@@ -9,7 +9,7 @@ from django.views.generic.edit import FormView, UpdateView, CreateView, DeleteVi
 
 from apps.orders.models import Order
 from .forms import RegistrationForm, ProfileForm, AddressForm
-from .models import Address
+from .models import Address, User
 
 
 class RegisterView(FormView):

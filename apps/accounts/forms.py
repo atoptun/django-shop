@@ -1,7 +1,6 @@
 from django import forms
-from django.contrib.auth.models import User
 
-from .models import Profile, Address
+from .models import Address, Profile, User
 
 
 class RegistrationForm(forms.ModelForm):

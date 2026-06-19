@@ -1,6 +1,4 @@
-from typing import TYPE_CHECKING
-
-from django.contrib.auth.models import User as DjangoUser
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -8,14 +6,13 @@ from phonenumber_field.modelfields import PhoneNumberField
 from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
-if TYPE_CHECKING:
-    # Pylance sees this subclass with profile attribute
-    class User(DjangoUser):
-        profile: 'Profile'
-else:
-    # Django at runtime gets standard User model
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
+
+class User(AbstractUser, SafeDeleteModel):
+    _safedelete_policy = SOFT_DELETE_CASCADE
+    profile: "Profile"  # hints user.profile
+
+    class Meta:
+        db_table = "auth_user"
 
 
 class Profile(SafeDeleteModel):

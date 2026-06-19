@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -18,7 +18,7 @@ class Order(SafeDeleteModel):
         DELIVERED = "delivered", "Delivered"
         CANCELLED = "cancelled", "Cancelled"
 
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="orders")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="orders")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     shipping_address = models.TextField()
