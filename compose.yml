@@ -77,4 +77,4 @@ volumes:
   pgadmin_data:
     name: django_shop_pgadmin_prod_data
   static_volume:
-    name: django_shop_staticfiles_data
+    name: django_shop_staticfiles_prod_data

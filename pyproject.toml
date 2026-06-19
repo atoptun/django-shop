@@ -55,8 +55,14 @@ max-complexity = 10
 
 [tool.pyright]
 include = ["core", "apps"]
-typeCheckingMode = "basic" # basic or strict
-stubPath = ".venv/lib/python3.12/site-packages"
+typeCheckingMode = "basic" # basic, standard, strict
+extraPaths = ["apps"]
+# reportGeneralTypeIssues = "information"
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "apps"]
+lines-after-imports = -1 
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.django-stubs]
 django_settings_module = "core.settings"

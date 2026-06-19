@@ -4,9 +4,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView, UpdateView, CreateView, DeleteView
 
+from apps.orders.models import Order
 from .forms import RegistrationForm, ProfileForm, AddressForm
 from .models import Address
 
@@ -36,25 +37,26 @@ class ProfileView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class OrderHistoryView(LoginRequiredMixin, TemplateView):
+class OrderHistoryView(LoginRequiredMixin, ListView):
+    model = Order
     template_name = "accounts/order_history.html"
+    context_object_name = "orders"
+    paginate_by = 5
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get_queryset(self):
         if hasattr(self.request.user, "orders"):
-            context["orders"] = self.request.user.orders.all().order_by("-created_at")
-        else:
-            context["orders"] = []
-        return context
+            return self.request.user.orders.all().order_by("-created_at")
+        return Order.objects.none()
 
 
-class AddressListView(LoginRequiredMixin, TemplateView):
+class AddressListView(LoginRequiredMixin, ListView):
+    model = Address
     template_name = "accounts/address_list.html"
+    context_object_name = "addresses"
+    paginate_by = 5
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["addresses"] = self.request.user.profile.addresses.all()
-        return context
+    def get_queryset(self):
+        return Address.objects.filter(profile=self.request.user.profile).order_by("-created_at")
 
 
 class AddressCreateView(LoginRequiredMixin, CreateView):
