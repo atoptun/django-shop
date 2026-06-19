@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from safedelete.config import SOFT_DELETE_CASCADE
@@ -14,7 +14,7 @@ class Review(SafeDeleteModel):
         Product, on_delete=models.CASCADE, related_name="reviews"
     )
     user = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, related_name="reviews"
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="reviews"
     )
     rating = models.PositiveSmallIntegerField(
         validators=[

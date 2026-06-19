@@ -2,39 +2,46 @@
 
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description"
-              content="Hop & Barley is a comprehensive catalog of brewing ingredients, including hops, malts, yeast, and adjuncts. Explore our extensive collection to find the perfect ingredients for your brewing needs.">
-        <meta name="keywords"
-              content="brewing ingredients, hops, malts, yeast, adjuncts, beer brewing, homebrewing, craft beer, brewing supplies">
-        <title>{% block title %}Hop & Barley{% endblock title %}</title>
-        <!-- Google Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-              rel="stylesheet">
-        <!-- Font Awesome CDN -->
-        <link rel="stylesheet"
-              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-              integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
-              crossorigin="anonymous"
-              referrerpolicy="no-referrer" />
-        <!-- Main CSS -->
-        <link rel="stylesheet" href="{% static 'css/main.css' %}">
-        {% block extra_head %}
-        {% endblock extra_head %}
-    </head>
-    <body>
-        {% include "includes/header.html" %}
-        <!-- Main Content -->
-        {% block content %}
-        {% endblock content %}
-        {% include "includes/footer.html" %}
-        <!-- Global JS -->
-        <script src="{% static 'js/main.js' %}"></script>
-        {% block extra_js %}
-        {% endblock extra_js %}
-    </body>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+          content="Hop & Barley is a comprehensive catalog of brewing ingredients, including hops, malts, yeast, and adjuncts. Explore our extensive collection to find the perfect ingredients for your brewing needs.">
+    <meta name="keywords"
+          content="brewing ingredients, hops, malts, yeast, adjuncts, beer brewing, homebrewing, craft beer, brewing supplies">
+    <title>{% block title %}Hop & Barley{% endblock title %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+          integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer" />
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_head %}
+    {% endblock extra_head %}
+  </head>
+  <body>
+    {% if messages %}
+      <div class="messages-container">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% include "includes/header.html" %}
+    <!-- Main Content -->
+    {% block content %}
+    {% endblock content %}
+    {% include "includes/footer.html" %}
+    <!-- Global JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}
+    {% endblock extra_js %}
+  </body>
 </html>
