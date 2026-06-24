@@ -45,7 +45,9 @@
                    placeholder="Enter your password"
                    required>
           </div>
-          {% if redirect_to %}<input type="hidden" name="next" value="{{ redirect_to }}">{% endif %}
+          {% if redirect_to %}
+            <input type="hidden" name="next" value="{{ redirect_to }}">
+          {% endif %}
           <div class="ButtonGroup">
             <button type="submit" class="button button--primary">Sign In</button>
           </div>
