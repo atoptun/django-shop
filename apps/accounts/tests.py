@@ -20,6 +20,7 @@ pytestmark = pytest.mark.django_db
 
 # --- User & Profile Model Tests ---
 
+
 def test_user_creation():
     user = UserFactory(username="testuser", email="test@example.com")
     assert user.username == "testuser"
@@ -45,6 +46,7 @@ def test_profile_factory_creation():
 
 
 # --- Form Tests ---
+
 
 def test_registration_form_valid():
     form_data = {
@@ -125,6 +127,7 @@ def test_profile_form_invalid_phone():
 
 # --- View Tests ---
 
+
 def test_register_view_get(client):
     url = reverse("accounts:register")
     response = client.get(url)
@@ -142,11 +145,11 @@ def test_register_view_post(client):
     response = client.post(url, form_data)
     assert response.status_code == 302
     assert response.url == reverse("products:list_home")
-    
+
     # Check user was created and logged in
     user = User.objects.get(email="registerview@example.com")
     assert user.is_active is True
-    
+
     # Verify success message
     messages = list(get_messages(response.wsgi_request))
     assert len(messages) > 0
@@ -174,10 +177,15 @@ def test_order_history_view(client):
     client.force_login(user)
     # Create 8 orders for this user
     for i in range(8):
-        Order.objects.create(user=user, status=Order.Status.PENDING, total_price=10.0 + i, shipping_address="Address Info")
+        Order.objects.create(
+            user=user,
+            status=Order.Status.PENDING,
+            total_price=10.0 + i,
+            shipping_address="Address Info",
+        )
 
     url = reverse("accounts:order_history")
-    
+
     # Page 1
     response = client.get(url)
     assert response.status_code == 200
@@ -199,7 +207,7 @@ def test_address_list_view(client):
         AddressFactory(profile=user.profile, recipient_name=f"Recipient {i}")
 
     url = reverse("accounts:address_list")
-    
+
     # Page 1
     response = client.get(url)
     assert response.status_code == 200
@@ -227,7 +235,7 @@ def test_profile_view_post(client):
     response = client.post(url, form_data)
     assert response.status_code == 302
     assert response.url == reverse("accounts:profile")
-    
+
     user.refresh_from_db()
     assert user.first_name == "Updated"
     assert user.profile.phone == "+380991112233"
@@ -242,7 +250,9 @@ def test_login_view_get(client):
 
 def test_login_view_post_success(client):
     # RegistrationForm sets username = email
-    UserFactory(username="loginuser@example.com", email="loginuser@example.com", password="correctpass")
+    UserFactory(
+        username="loginuser@example.com", email="loginuser@example.com", password="correctpass"
+    )
     url = reverse("accounts:login")
     response = client.post(url, {"username": "loginuser@example.com", "password": "correctpass"})
     assert response.status_code == 302
@@ -250,7 +260,9 @@ def test_login_view_post_success(client):
 
 
 def test_login_view_post_failure(client):
-    UserFactory(username="loginuser@example.com", email="loginuser@example.com", password="correctpass")
+    UserFactory(
+        username="loginuser@example.com", email="loginuser@example.com", password="correctpass"
+    )
     url = reverse("accounts:login")
     response = client.post(url, {"username": "loginuser@example.com", "password": "wrongpass"})
     assert response.status_code == 200  # Reloads form with error
@@ -268,7 +280,7 @@ def test_password_reset_confirm_view_redirect(client):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
     url = reverse("accounts:password_reset_confirm", kwargs={"uidb64": uid, "token": token})
-    
+
     # GET request to confirm token should redirect to the tokenless set-password view
     response = client.get(url)
     assert response.status_code == 302
@@ -276,6 +288,7 @@ def test_password_reset_confirm_view_redirect(client):
 
 
 # --- Address Model, Form, and View Tests ---
+
 
 def test_address_model_creation():
     address = AddressFactory(recipient_name="Alex Smith", city="Kharkiv")
@@ -290,19 +303,19 @@ def test_address_default_exclusivity():
     user = UserFactory()
     addr1 = AddressFactory(profile=user.profile, is_default=True)
     addr2 = AddressFactory(profile=user.profile, is_default=True)
-    
+
     # Reload from DB
     addr1.refresh_from_db()
     addr2.refresh_from_db()
-    
+
     # Only the most recent default address should be default
     assert addr1.is_default is False
     assert addr2.is_default is True
-    
+
     # Verify it does not affect other users' default addresses
     other_user = UserFactory()
     other_addr = AddressFactory(profile=other_user.profile, is_default=True)
-    
+
     addr2.refresh_from_db()
     assert addr2.is_default is True
     assert other_addr.is_default is True
@@ -336,7 +349,7 @@ def test_address_form_invalid_phone():
 def test_address_create_view(client):
     user = UserFactory()
     client.force_login(user)
-    
+
     url = reverse("accounts:address_add")
     form_data = {
         "recipient_name": "New Recipient",
@@ -345,11 +358,11 @@ def test_address_create_view(client):
         "address_line": "Shevchenka St, 2",
         "is_default": False,
     }
-    
+
     response = client.post(url, form_data)
     assert response.status_code == 302
     assert response.url == reverse("accounts:address_list")
-    
+
     # Check the address was created in DB and associated with user's profile
     assert user.profile.addresses.filter(recipient_name="New Recipient").exists() is True
 
@@ -357,15 +370,15 @@ def test_address_create_view(client):
 def test_address_update_view(client):
     user = UserFactory()
     client.force_login(user)
-    
+
     address = AddressFactory(profile=user.profile, recipient_name="Old Name")
     url = reverse("accounts:address_edit", kwargs={"pk": address.pk})
-    
+
     # GET request
     response = client.get(url)
     assert response.status_code == 200
     assert "accounts/address_form.html" in [t.name for t in response.templates]
-    
+
     # POST request
     form_data = {
         "recipient_name": "Updated Name",
@@ -376,7 +389,7 @@ def test_address_update_view(client):
     }
     response = client.post(url, form_data)
     assert response.status_code == 302
-    
+
     address.refresh_from_db()
     assert address.recipient_name == "Updated Name"
 
@@ -385,11 +398,11 @@ def test_address_update_view_permission_denied(client):
     user = UserFactory()
     other_user = UserFactory()
     client.force_login(user)
-    
+
     # Address belongs to other_user
     address = AddressFactory(profile=other_user.profile, recipient_name="Other User Address")
     url = reverse("accounts:address_edit", kwargs={"pk": address.pk})
-    
+
     response = client.get(url)
     assert response.status_code == 404
 
@@ -397,20 +410,20 @@ def test_address_update_view_permission_denied(client):
 def test_address_delete_view(client):
     user = UserFactory()
     client.force_login(user)
-    
+
     address = AddressFactory(profile=user.profile)
     url = reverse("accounts:address_delete", kwargs={"pk": address.pk})
-    
+
     # GET request (confirmation page)
     response = client.get(url)
     assert response.status_code == 200
     assert "accounts/address_confirm_delete.html" in [t.name for t in response.templates]
-    
+
     # POST request (delete)
     response = client.post(url)
     assert response.status_code == 302
     assert response.url == reverse("accounts:address_list")
-    
+
     # Address should be deleted
     assert user.profile.addresses.filter(pk=address.pk).exists() is False
 
@@ -419,12 +432,10 @@ def test_address_delete_view_permission_denied(client):
     user = UserFactory()
     other_user = UserFactory()
     client.force_login(user)
-    
+
     # Address belongs to other_user
     address = AddressFactory(profile=other_user.profile)
     url = reverse("accounts:address_delete", kwargs={"pk": address.pk})
-    
+
     response = client.post(url)
     assert response.status_code == 404
-
-

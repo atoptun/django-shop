@@ -3,6 +3,7 @@
 This document outlines the step-by-step development roadmap for the Django/DRF e-commerce application based on the requirements in `task.md` and the design decisions made.
 
 ## Phase 1: Database Models & Migrations
+
 1. **App Registration**: Register `apps.accounts`, `apps.products`, `apps.orders`, and `apps.reviews` in `INSTALLED_APPS` within [settings.py](file:///home/topa/study/jr/projects/django-shop/core/settings.py).
 2. **Accounts App**:
    - Create `Profile` model in `apps/accounts/models.py` containing `phone`, `city`, and `address` fields, linked via a `OneToOneField` to standard `User`.
@@ -19,6 +20,7 @@ This document outlines the step-by-step development roadmap for the Django/DRF e
 6. **Migrations**: Generate and apply migrations using `makemigrations` and `migrate`.
 
 ## Phase 2: Web Interface (Views & Templates Integration)
+
 1. **URL Routing**: Configure global routing in [urls.py](file:///home/topa/study/jr/projects/django-shop/core/urls.py) and delegate views to respective app-level routing.
 2. **Catalog / Products List**:
    - Implement catalog logic supporting pagination, search, sorting (price, rating, newness), and product type filtering.
@@ -33,6 +35,7 @@ This document outlines the step-by-step development roadmap for the Django/DRF e
    - Setup session authentication templates for Login, Registration, and Password Reset.
 
 ## Phase 3: REST API & JWT Authentication
+
 1. **Authentication Backend**: Configure `djangorestframework-simplejwt` for `/api/users/login/` returning access and refresh tokens.
 2. **Serializers**: Create Django REST Framework serializers matching all target schemas.
 3. **ViewSets & Routers**:
@@ -42,6 +45,7 @@ This document outlines the step-by-step development roadmap for the Django/DRF e
    - `/api/users/register/`.
 
 ## Phase 4: API Documentation, Testing & Linters
+
 1. **API Documentation**: Configure `drf-spectacular` OpenAPI schema endpoints and serve them at `/api/docs/`.
 2. **Unit Tests**:
    - Setup `pytest-django`.

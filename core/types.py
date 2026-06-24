@@ -5,4 +5,3 @@ from apps.accounts.models import User
 
 class AuthenticatedRequest(HttpRequest):
     user: User
-

@@ -6,64 +6,131 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('products', '0001_initial'),
+        ("products", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Order',
+            name="Order",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted', models.DateTimeField(db_index=True, editable=False, null=True)),
-                ('deleted_by_cascade', models.BooleanField(default=False, editable=False)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('paid', 'Paid'), ('shipped', 'Shipped'), ('delivered', 'Delivered'), ('cancelled', 'Cancelled')], default='pending', max_length=20)),
-                ('total_price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('shipping_address', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='orders', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("deleted", models.DateTimeField(db_index=True, editable=False, null=True)),
+                ("deleted_by_cascade", models.BooleanField(default=False, editable=False)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("paid", "Paid"),
+                            ("shipped", "Shipped"),
+                            ("delivered", "Delivered"),
+                            ("cancelled", "Cancelled"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("total_price", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("shipping_address", models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="orders",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='Payment',
+            name="Payment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted', models.DateTimeField(db_index=True, editable=False, null=True)),
-                ('deleted_by_cascade', models.BooleanField(default=False, editable=False)),
-                ('method', models.CharField(choices=[('credit_card', 'Credit Card'), ('paypal', 'PayPal')], max_length=20)),
-                ('transaction_id', models.CharField(max_length=100, unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('order', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='payment', to='orders.order')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("deleted", models.DateTimeField(db_index=True, editable=False, null=True)),
+                ("deleted_by_cascade", models.BooleanField(default=False, editable=False)),
+                (
+                    "method",
+                    models.CharField(
+                        choices=[("credit_card", "Credit Card"), ("paypal", "PayPal")],
+                        max_length=20,
+                    ),
+                ),
+                ("transaction_id", models.CharField(max_length=100, unique=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "order",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="payment",
+                        to="orders.order",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='OrderItem',
+            name="OrderItem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted', models.DateTimeField(db_index=True, editable=False, null=True)),
-                ('deleted_by_cascade', models.BooleanField(default=False, editable=False)),
-                ('quantity', models.PositiveIntegerField()),
-                ('price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('order', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='orders.order')),
-                ('product', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='order_items', to='products.product')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("deleted", models.DateTimeField(db_index=True, editable=False, null=True)),
+                ("deleted_by_cascade", models.BooleanField(default=False, editable=False)),
+                ("quantity", models.PositiveIntegerField()),
+                ("price", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "order",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="items",
+                        to="orders.order",
+                    ),
+                ),
+                (
+                    "product",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="order_items",
+                        to="products.product",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['created_at'],
-                'constraints': [models.UniqueConstraint(fields=('order', 'product'), name='unique_order_product')],
+                "ordering": ["created_at"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("order", "product"), name="unique_order_product"
+                    )
+                ],
             },
         ),
     ]

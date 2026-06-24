@@ -245,6 +245,7 @@ SPECTACULAR_SETTINGS = {
 
 if DEBUG:
     import socket
+
     try:
         hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
         for ip in ips:

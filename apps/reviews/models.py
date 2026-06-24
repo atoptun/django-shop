@@ -10,17 +10,13 @@ from apps.products.models import Product
 class Review(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
 
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name="reviews"
-    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="reviews"
     )
     rating = models.PositiveSmallIntegerField(
-        validators=[
-        MinValueValidator(1),
-        MaxValueValidator(5)
-    ])
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
     comment = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
