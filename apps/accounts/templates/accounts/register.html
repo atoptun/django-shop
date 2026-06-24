@@ -2,41 +2,41 @@
 
 {% load static %}
 
-{% block title %}Register | Hop & Barley{% endblock title %}
+{% block title %}
+  Register | Hop & Barley
+{% endblock title %}
 {% block content %}
-    <main class="auth-page-wrapper">
-        <div class="auth-background">
-            <img src="{% static 'img/background/pattern.jpg' %}"
-                 alt="Background pattern">
+  <main class="auth-page-wrapper">
+    <div class="auth-background">
+      <img src="{% static 'img/background/pattern.jpg' %}"
+           alt="Background pattern">
+    </div>
+    <div class="auth-form-container">
+      <div class="auth-container auth-container--register">
+        <div class="Legend">
+          <h1 class="auth-title">Register</h1>
         </div>
-        <div class="auth-form-container">
-            <div class="auth-container auth-container--register">
-                <div class="Legend">
-                    <h1 class="auth-title">Register</h1>
-                </div>
-                <form class="auth-form"
-                      id="register-form"
-                      method="post"
-                      action="{% url 'accounts:register' %}">
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div class="InputField">
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.errors %}
-                                <span class="field-error">{{ field.errors.0 }}</span>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                    {% if form.non_field_errors %}
-                        <div class="form-errors">{{ form.non_field_errors.0 }}</div>
-                    {% endif %}
-                    <div class="ButtonGroup">
-                        <button type="submit" class="button button--primary">Register</button>
-                    </div>
-                </form>
-                <p class="auth-switch">Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+        <form class="auth-form"
+              id="register-form"
+              method="post"
+              action="{% url 'accounts:register' %}">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="InputField">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}
             </div>
-        </div>
-    </main>
+          {% endfor %}
+          {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors.0 }}</div>{% endif %}
+          <div class="ButtonGroup">
+            <button type="submit" class="button button--primary">Register</button>
+          </div>
+        </form>
+        <p class="auth-switch">
+          Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a>
+        </p>
+      </div>
+    </div>
+  </main>
 {% endblock content %}

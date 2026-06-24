@@ -31,13 +31,10 @@
                           CheckboxField
                         {% else %}
                           InputField
-                        {% endif %}
-                        ">
+                        {% endif %}">
               <label for="{{ field.id_for_label }}">{{ field.label }}</label>
               {{ field }}
-              {% if field.errors %}
-                <span class="field-error">{{ field.errors.0 }}</span>
-              {% endif %}
+              {% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}
             </div>
           {% endfor %}
           {% if form.non_field_errors %}

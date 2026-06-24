@@ -1,23 +1,38 @@
 {% load static %}
+
 <!-- Footer -->
 <footer>
-    <img src="{% static 'img/background/image-footer.svg' %}" alt="Hop & Barley Hops Logo" class="footer__hops-logo" width="484" height="264">
-    <nav class="footer__nav">
-        <ul>
-            <li><a href="#">Contact</a></li>
-            <li><a href="#">FAQ</a></li>
-            <li><a href="#">Community</a></li>
-            <li><a href="#">Resources</a></li>
-            <li><a href="#">License</a></li>
-        </ul>
-    </nav>
-    <p class="footer__copyright">© Hop & Barley 2025. All rights reserved</p>
+  <img src="{% static 'img/background/image-footer.svg' %}"
+       alt="Hop & Barley Hops Logo"
+       class="footer__hops-logo"
+       width="484"
+       height="264">
+  <nav class="footer__nav">
+    <ul>
+      <li>
+        <a href="#">Contact</a>
+      </li>
+      <li>
+        <a href="#">FAQ</a>
+      </li>
+      <li>
+        <a href="#">Community</a>
+      </li>
+      <li>
+        <a href="#">Resources</a>
+      </li>
+      <li>
+        <a href="#">License</a>
+      </li>
+    </ul>
+  </nav>
+  <p class="footer__copyright">© Hop & Barley 2025. All rights reserved</p>
 </footer>
 {% if user.is_superuser %}
-    <!-- Debug Panel -->
-    <div class="footer__debug_panel">
-        <p>Debug Panel: User is superuser</p>
-        <p>Username: {{ user.username }}</p>
-        <p>Email: {{ user.email }}</p>
-    </div>
+  <!-- Debug Panel -->
+  <div class="footer__debug_panel">
+    <p>Debug Panel: User is superuser</p>
+    <p>Username: {{ user.username }}</p>
+    <p>Email: {{ user.email }}</p>
+  </div>
 {% endif %}

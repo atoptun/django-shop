@@ -1,26 +1,25 @@
 {% extends "accounts/profile_base.html" %}
 
-{% block account_title %}Account Information{% endblock account_title %}
-
+{% block account_title %}
+  Account Information
+{% endblock account_title %}
 {% block tab_content %}
   <div class="account-form-container">
     <h2 class="account-form-title">Personal Info</h2>
-    <form id="account-info-form" method="post" action="{% url 'accounts:profile' %}">
+    <form id="account-info-form"
+          method="post"
+          action="{% url 'accounts:profile' %}">
       {% csrf_token %}
       {% for field in form %}
         <div class="InputField">
           <label for="{{ field.id_for_label }}">{{ field.label }}</label>
           {{ field }}
-          {% if field.errors %}
-            <span class="field-error">{{ field.errors.0 }}</span>
-          {% endif %}
+          {% if field.errors %}<span class="field-error">{{ field.errors.0 }}</span>{% endif %}
         </div>
       {% endfor %}
-      {% if form.non_field_errors %}
-        <div class="form-errors">{{ form.non_field_errors.0 }}</div>
-      {% endif %}
+      {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors.0 }}</div>{% endif %}
       <div class="account-form-actions">
-      <button type="submit" class="button button--primary button--full-width">Save</button>
+        <button type="submit" class="button button--primary button--full-width">Save</button>
       </div>
     </form>
     <form method="post" action="{% url 'accounts:logout' %}">

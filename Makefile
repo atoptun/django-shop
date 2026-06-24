@@ -102,4 +102,4 @@ doc-history: ## List the full migration history from the Docker container contex
 
 # This catch-all rule prevents Make from failing if you pass extra words
 %:
-	@:	
+	@:

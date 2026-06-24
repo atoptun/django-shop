@@ -21,7 +21,7 @@ RUN groupadd --system --gid 999 nonroot \
  && useradd --system --gid 999 --uid 999 --create-home nonroot
 
 
- 
+
 FROM base AS development
 
 # Include development dependencies

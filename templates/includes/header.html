@@ -2,43 +2,59 @@
 
 <!-- Header -->
 <header>
-    <div class="header-container">
-        <a href="{% url 'products:list_home' %}" class="header__logo">
-            <img src="{% static 'img/logo.svg' %}"
-                 alt="Hop & Barley Logo"
-                 width="26"
-                 height="38">
-            <p class="logo-text">Hop & Barley</p>
+  <div class="header-container">
+    <a href="{% url 'products:list_home' %}" class="header__logo">
+      <img src="{% static 'img/logo.svg' %}"
+           alt="Hop & Barley Logo"
+           width="26"
+           height="38">
+      <p class="logo-text">Hop & Barley</p>
+    </a>
+    <nav class="header__nav">
+      <ul>
+        <li>
+          <a href="{% url 'products:list' %}">Products</a>
+        </li>
+        <li>
+          <a href="#">Guides & Recipes</a>
+        </li>
+        <li>
+          <a href="#">Community</a>
+        </li>
+        <li>
+          <a href="#">Resources</a>
+        </li>
+        <li>
+          <a href="#">Contact</a>
+        </li>
+      </ul>
+    </nav>
+    {% if not user.is_authenticated %}
+      <!-- Block for unauthorized user -->
+      <div class="header__auth-buttons" id="auth-guest">
+        <a href="{% url 'accounts:login' %}" class="button button--secondary">Sign in</a>
+        <a href="{% url 'accounts:register' %}" class="button button--primary">Register</a>
+      </div>
+    {% else %}
+      <!-- Block for authorized user -->
+      <div class="header__user-actions" id="auth-user">
+        <a href="{% url 'accounts:profile' %}"
+           class="user-icon"
+           aria-label="My Account">
+          <img src="{% static 'img/icons/User_alt.svg' %}"
+               width="30"
+               height="30"
+               alt="User Account">
         </a>
-        <nav class="header__nav">
-            <ul>
-                <li><a href="{% url 'products:list' %}">Products</a></li>
-                <li><a href="#">Guides & Recipes</a></li>
-                <li><a href="#">Community</a></li>
-                <li><a href="#">Resources</a></li>
-                <li><a href="#">Contact</a></li>
-            </ul>
-        </nav>
-        {% if not user.is_authenticated %}
-        <!-- Block for unauthorized user -->
-            <div class="header__auth-buttons" id="auth-guest">
-                <a href="{% url 'accounts:login' %}" class="button button--secondary">Sign in</a>
-                <a href="{% url 'accounts:register' %}" class="button button--primary">Register</a>
-            </div>
-        {% else %}
-            <!-- Block for authorized user -->
-            <div class="header__user-actions" id="auth-user">
-                <a href="{% url 'accounts:profile' %}"
-                   class="user-icon"
-                   aria-label="My Account">
-                    <img src="{% static 'img/icons/User_alt.svg' %}" width="30" height="30" alt="User Account">
-                </a>
-                <a href="{% url 'accounts:order_history' %}"
-                   class="cart-icon"
-                   aria-label="Shopping Cart">
-                    <img src="{% static 'img/icons/Shopping_bag.svg' %}" width="30" height="30" alt="Shopping Cart">
-                </a>
-            </div>
-        {% endif %}
-    </div>
+        <a href="{% url 'accounts:order_history' %}"
+           class="cart-icon"
+           aria-label="Shopping Cart">
+          <img src="{% static 'img/icons/Shopping_bag.svg' %}"
+               width="30"
+               height="30"
+               alt="Shopping Cart">
+        </a>
+      </div>
+    {% endif %}
+  </div>
 </header>
