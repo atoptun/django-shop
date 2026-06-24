@@ -2,19 +2,31 @@
 
 {% load static %}
 
-{% block title %}{% block account_title %}My Account{% endblock account_title %} | Hop & Barley{% endblock title %}
+{% block title %}
+  {% block account_title %}
+    My Account
+  {% endblock account_title %}
+  | Hop & Barley
+{% endblock title %}
 {% block content %}
   <main class="account-page-wrapper">
     <div class="account-container">
       <!-- Tabs Navigation -->
       <div class="account-tabs">
-        <a href="{% url 'accounts:order_history' %}" class="account-tab {% if request.resolver_match.url_name == 'order_history' %}active{% endif %}">Order History</a>
-        <a href="{% url 'accounts:profile' %}" class="account-tab {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">Account Information</a>
-        <a href="{% url 'accounts:address_list' %}" class="account-tab {% if request.resolver_match.url_name == 'address_list' %}active{% endif %}">Addresses</a>
+        <a href="{% url 'accounts:order_history' %}"
+           class="account-tab
+                  {% if request.resolver_match.url_name == 'order_history' %}active{% endif %}">Order History</a>
+        <a href="{% url 'accounts:profile' %}"
+           class="account-tab
+                  {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">Account Information</a>
+        <a href="{% url 'accounts:address_list' %}"
+           class="account-tab
+                  {% if request.resolver_match.url_name == 'address_list' %}active{% endif %}">Addresses</a>
       </div>
       <!-- Tabs Content -->
       <div class="tab-content">
-        {% block tab_content %}{% endblock tab_content %}
+        {% block tab_content %}
+        {% endblock tab_content %}
       </div>
     </div>
   </main>

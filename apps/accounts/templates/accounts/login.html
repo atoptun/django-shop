@@ -2,7 +2,9 @@
 
 {% load static %}
 
-{% block title %}Sign In | Hop & Barley{% endblock title %}
+{% block title %}
+  Sign In | Hop & Barley
+{% endblock title %}
 {% block content %}
   <main class="auth-page-wrapper">
     <div class="auth-background">
@@ -43,9 +45,7 @@
                    placeholder="Enter your password"
                    required>
           </div>
-          {% if redirect_to %}
-            <input type="hidden" name="next" value="{{ redirect_to }}">
-          {% endif %}
+          {% if redirect_to %}<input type="hidden" name="next" value="{{ redirect_to }}">{% endif %}
           <div class="ButtonGroup">
             <button type="submit" class="button button--primary">Sign In</button>
           </div>
@@ -53,7 +53,9 @@
             <a href="{% url 'accounts:password_reset' %}">Forgot password?</a>
           </div>
         </form>
-        <p class="auth-switch">Don’t have an account? <a href="{% url 'accounts:register' %}">Sign up</a></p>
+        <p class="auth-switch">
+          Don’t have an account? <a href="{% url 'accounts:register' %}">Sign up</a>
+        </p>
       </div>
     </div>
   </main>

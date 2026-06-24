@@ -1,6 +1,7 @@
 import factory
 from django.contrib.auth import get_user_model
-from apps.accounts.models import Profile, Address
+
+from apps.accounts.models import Address, Profile
 
 User = get_user_model()
 

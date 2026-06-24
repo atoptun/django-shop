@@ -9,7 +9,11 @@
           content="Hop & Barley is a comprehensive catalog of brewing ingredients, including hops, malts, yeast, and adjuncts. Explore our extensive collection to find the perfect ingredients for your brewing needs.">
     <meta name="keywords"
           content="brewing ingredients, hops, malts, yeast, adjuncts, beer brewing, homebrewing, craft beer, brewing supplies">
-    <title>{% block title %}Hop & Barley{% endblock title %}</title>
+    <title>
+      {% block title %}
+        Hop & Barley
+      {% endblock title %}
+    </title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,9 +33,7 @@
   <body>
     {% if messages %}
       <div class="messages-container">
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
+        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
       </div>
     {% endif %}
     {% include "includes/header.html" %}
