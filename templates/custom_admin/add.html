@@ -35,7 +35,9 @@
                    {% if product.image %}
                      style="background-image: url('{{ product.image.url }}'); background-size: cover; background-position: center;"
                    {% endif %}>
-                {% if not product.image %}<i class="fa-regular fa-image"></i>{% endif %}
+                {% if not product.image %}
+                  <i class="fa-regular fa-image"></i>
+                {% endif %}
               </div>
               <input type="file"
                      id="image-upload-input"
@@ -69,9 +71,7 @@
                           placeholder="Product Description"
                           rows="4"
                           required>{{ form.description.value|default:product.description|default:'' }}</textarea>
-                {% if form.description.errors %}
-                  <span class="field-error">{{ form.description.errors.0 }}</span>
-                {% endif %}
+                {% if form.description.errors %}<span class="field-error">{{ form.description.errors.0 }}</span>{% endif %}
               </div>
               <div class="checkout-form-group">
                 <label for="prod-price">Price</label>

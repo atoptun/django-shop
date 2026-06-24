@@ -1,13 +1,13 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% load static %}
 
-{% block title %}Checkout | Hop & Barley{% endblock %}
+{% block title %}Checkout | Hop & Barley{% endblock title %}
 {% block content %}
   <main class="checkout-page-wrapper">
     <div class="checkout-container">
       <h1 class="checkout-title">Order Details</h1>
-      <form id="checkout-form" method="POST" action="{% url 'orders:checkout' %}">
+      <form id="checkout-form" method="post" action="{% url 'orders:checkout' %}">
         {% csrf_token %}
         <!-- Shipping Information -->
         <section class="checkout-section">
@@ -60,9 +60,7 @@
                       placeholder="Street name, building/apartment number"
                       rows="3"
                       required>{{ form.address.value|default:profile.address|default:'' }}</textarea>
-            {% if form.address.errors %}
-              <span class="field-error">{{ form.address.errors.0 }}</span>
-            {% endif %}
+            {% if form.address.errors %}<span class="field-error">{{ form.address.errors.0 }}</span>{% endif %}
           </div>
         </section>
         <!-- Payment Method -->

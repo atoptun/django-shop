@@ -45,7 +45,8 @@ class Command(BaseCommand):
         profile = user.profile
         self.stdout.write(
             self.style.NOTICE(
-                f"Seeding {quantity} fake addresses for user '{user.username}' (Profile ID: {profile.pk})..."
+                f"Seeding {quantity} fake addresses for user '{user.username}'"
+                f" (Profile ID: {profile.pk})..."
             )
         )
 
