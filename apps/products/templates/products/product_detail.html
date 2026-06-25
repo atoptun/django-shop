@@ -14,10 +14,14 @@
           {% if product.image %}
             <img src="{{ product.image.url }}"
                  alt="{{ product.name }}"
+                 width="640"
+                 height="480"
                  class="product-image">
           {% else %}
             <img src="{% static 'img/products/citra_hops.jpg' %}"
                  alt="{{ product.name }}"
+                 width="640"
+                 height="480"
                  class="product-image">
           {% endif %}
         </div>

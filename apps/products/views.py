@@ -57,9 +57,6 @@ class ProductListView(ListView):
         context["selected_categories"] = self.request.GET.getlist("category")
         context["search_query"] = self.request.GET.get("search", "")
         categories = Category.objects.all().order_by("name")
-        # .values_list(
-        #     "category__name", "category__slug"
-        # )
         context["categories"] = categories
 
         return context
