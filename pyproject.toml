@@ -79,6 +79,7 @@ dev = "python manage.py runserver"
 # lint = { composite = ["ruff check", "ruff format --check", "pyright"] }
 lint = "ruff check && ruff format --check && pyright"
 fix = "ruff check --fix && ruff format"
+pre-commit = "pre-commit run --all-files"
 
 [tool.djlint]
 profile = "django"

@@ -3,6 +3,7 @@ services:
     volumes:
       - ./logs/dev/nginx:/var/log/nginx
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - ./media:/app/media:ro
     depends_on:
       - app
 
@@ -32,6 +33,7 @@ services:
       - ./logs/dev:/app/logs
       - /app/.venv/
       - /root/.cache/uv/
+      - ./media:/app/media
 
     develop:
       # Create a `watch` configuration to update the app

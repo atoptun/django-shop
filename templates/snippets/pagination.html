@@ -1,9 +1,12 @@
 {% if is_paginated %}
+  {% load navigation_tags %}
+
   <div class="pagination-container">
     <ul class="pagination-list">
       {% if page_obj.has_previous %}
         <li>
-          <a href="?page={{ page_obj.previous_page_number }}" class="page-link">«</a>
+          <a href="{% relative_url 'page' page_obj.previous_page_number %}"
+             class="page-link">«</a>
         </li>
       {% else %}
         <li class="page-item disabled">
@@ -17,13 +20,14 @@
           </li>
         {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
           <li>
-            <a href="?page={{ num }}" class="page-link">{{ num }}</a>
+            <a href="{% relative_url 'page' num %}" class="page-link">{{ num }}</a>
           </li>
         {% endif %}
       {% endfor %}
       {% if page_obj.has_next %}
         <li>
-          <a href="?page={{ page_obj.next_page_number }}" class="page-link">»</a>
+          <a href="{% relative_url 'page' page_obj.next_page_number %}"
+             class="page-link">»</a>
         </li>
       {% else %}
         <li class="page-item disabled">

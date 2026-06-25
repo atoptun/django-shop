@@ -10,8 +10,8 @@ class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
 
-    username = factory.Sequence(lambda n: f"user_{n}")
-    email = factory.Sequence(lambda n: f"user_{n}@example.com")
+    username = factory.Sequence(lambda n: f"user_{n}")  # type: ignore
+    email = factory.Sequence(lambda n: f"user_{n}@example.com")  # type: ignore
     first_name = "John"
     last_name = "Doe"
     is_active = True
@@ -29,7 +29,7 @@ class ProfileFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Profile
 
-    user = factory.SubFactory(UserFactory)
+    user = factory.SubFactory(UserFactory)  # type: ignore
     phone = "+380991234567"
     city = "Kyiv"
     address = "Test Street 123"
@@ -51,7 +51,7 @@ class AddressFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Address
 
-    profile = factory.SubFactory(ProfileFactory)
+    profile = factory.SubFactory(ProfileFactory)  # type: ignore
     recipient_name = "Jane Doe"
     phone = "+380501234567"
     city = "Kyiv"

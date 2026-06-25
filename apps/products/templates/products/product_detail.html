@@ -76,42 +76,11 @@
           </div>
           <div class="accordion-content">
             <ul>
-              {% if product.origin %}
+              {% for key, value in product.technical_specifications.items %}
                 <li>
-                  <strong>Origin:</strong> {{ product.origin }}
+                  <strong>{{ key }}:</strong> {{ value }}
                 </li>
-              {% endif %}
-              {% if product.product_type %}
-                <li>
-                  <strong>Type:</strong> {{ product.product_type }}
-                </li>
-              {% endif %}
-              {% if product.alpha_acids %}
-                <li>
-                  <strong>Alpha Acids:</strong> {{ product.alpha_acids }}
-                </li>
-              {% endif %}
-              {% if product.beta_acids %}
-                <li>
-                  <strong>Beta Acids:</strong> {{ product.beta_acids }}
-                </li>
-              {% endif %}
-              {% if product.aroma_profile %}
-                <li>
-                  <strong>Aroma Profile:</strong> {{ product.aroma_profile }}
-                </li>
-              {% endif %}
-              {% if product.usage %}
-                <li>
-                  <strong>Usage:</strong> {{ product.usage }}
-                </li>
-              {% endif %}
-              {% if product.recommended_styles %}
-                <li>
-                  <strong>Recommended Beer Styles:</strong> {{ product.recommended_styles }}
-                </li>
-              {% endif %}
-              {% if not product.origin and not product.product_type %}
+              {% empty %}
                 <li>
                   <strong>Availability:</strong>
                   {% if product.stock > 0 %}
@@ -123,7 +92,7 @@
                 <li>
                   <strong>Category:</strong> {{ product.category.name }}
                 </li>
-              {% endif %}
+              {% endfor %}
             </ul>
           </div>
         </div>

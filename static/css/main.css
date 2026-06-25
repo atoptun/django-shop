@@ -217,10 +217,19 @@ header {
 .hero-banner {
   position: relative;
   max-width: 1312px;
-  margin: 0 auto 32px;
+  margin: 32px auto 32px;
   height: 400px;
   overflow: hidden;
   padding: 0 64px;
+}
+
+.hero-banner--home {
+  height: 400px;
+}
+
+.hero-banner--products {
+  margin: 16px auto 16px;
+  height: 100px;
 }
 
 /*.hero-banner {*/
@@ -431,6 +440,7 @@ header {
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
 }
 
 .sort-button.active-sort {
@@ -445,6 +455,13 @@ header {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
+}
+
+.no-products {
+  grid-column: span 3;
+  text-align: center;
+  padding: 32px;
+  font-size: large;
 }
 
 .product-card {

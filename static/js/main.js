@@ -1,31 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // --- General logic for all pages (Login/Logout Simulation) ---
-  // const loginForm = document.getElementById('login-form');
-  // const logoutButton = document.getElementById('logout-button');
-  // function checkLoginStatus() {
-  //     if (localStorage.getItem('isLoggedIn') === 'true') {
-  //         document.body.classList.add('user-logged-in');
-  //     } else {
-  //         document.body.classList.remove('user-logged-in');
-  //     }
-  // }
-  // if (loginForm) {
-  //     loginForm.addEventListener('submit', function(e) {
-  //         e.preventDefault();
-  //         localStorage.setItem('isLoggedIn', 'true');
-  //         const nextUrl = new URLSearchParams(window.location.search).get('next');
-  //         window.location.href = nextUrl || 'home.html';
-  //     });
-  // }
-  // if (logoutButton) {
-  //     logoutButton.addEventListener('click', function(e) {
-  //         e.preventDefault();
-  //         localStorage.removeItem('isLoggedIn');
-  //         window.location.href = 'home.html';
-  //     });
-  // }
-  // checkLoginStatus();
-
   // Alerts
   const alerts = document.querySelectorAll(".messages-container .alert");
 
@@ -44,78 +17,82 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // --- Logic for the Main Page (home.html) ---
-  const homePageContent = document.querySelector(".main-content-grid");
-  if (homePageContent) {
-    // 1. Sort Options Logic
-    const sortButtons = document.querySelectorAll(".sort-options .sort-button");
-    sortButtons.forEach((button) => {
-      button.addEventListener("click", function () {
-        sortButtons.forEach((btn) => btn.classList.remove("active-sort"));
-        this.classList.add("active-sort");
+  // Filter Logic (Keywords and Checkboxes)
+  const form = document.getElementById("js-filter-form");
+  const sortInput = document.getElementById("js-sort-input");
+
+  document.querySelectorAll(".js-auto-submit").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      htmx.trigger("#js-filter-form", "submit");
+    });
+  });
+
+  const sortButtonsContainer = document.querySelector(".js-sort-buttons");
+  if (sortButtonsContainer) {
+    sortButtonsContainer.addEventListener("click", (e) => {
+      const button = e.target.closest(".js-sort-button");
+      if (sortInput && button && button.dataset.sortValue) {
+        sortInput.value = button.dataset.sortValue;
+        document
+          .querySelectorAll(".js-sort-button")
+          .forEach((btn) => btn.classList.remove("active-sort"));
+        button.classList.add("active-sort");
+        htmx.trigger("#js-filter-form", "submit");
+      }
+    });
+  }
+
+  function removeCategoryFilter(keyword) {
+    const checkbox = document.querySelector(
+      `.js-auto-submit[data-keyword="${keyword}"]`,
+    );
+    if (checkbox) {
+      checkbox.checked = false;
+      htmx.trigger("#js-filter-form", "submit");
+    }
+  }
+
+  const keywordsList = document.querySelector(".js-keywords-list");
+  const keywordsGroup = document.querySelectorAll(
+    '.js-keywords-group input[type="checkbox"]',
+  );
+
+  if (keywordsList && keywordsGroup.length > 0) {
+    keywordsGroup.forEach((checkbox) => {
+      checkbox.addEventListener("change", function (e) {
+        const keyword = this.dataset.keyword;
+        if (this.checked) {
+          if (
+            !document.querySelector(
+              `.js-keyword-tag[data-keyword="${keyword}"]`,
+            )
+          ) {
+            const newTag = document.createElement("span");
+            newTag.className = "keyword-tag js-keyword-tag";
+            newTag.setAttribute("data-keyword", keyword);
+            newTag.innerHTML = `${keyword} <i class="fa-solid fa-xmark remove-keyword-icon js-remove-keyword"></i>`;
+            keywordsList.appendChild(newTag);
+          }
+        } else {
+          const tagToRemove = document.querySelector(
+            `.js-keyword-tag[data-keyword="${keyword}"]`,
+          );
+          if (tagToRemove) {
+            tagToRemove.remove();
+          }
+        }
       });
     });
 
-    // 2. Pagination Logic
-    const paginationList = document.querySelector(".pagination-list");
-    if (paginationList) {
-      const paginationLinks =
-        paginationList.querySelectorAll(".pagination__link");
-      paginationLinks.forEach((link) => {
-        link.addEventListener("click", function (event) {
-          event.preventDefault();
-          paginationLinks.forEach((lnk) => lnk.classList.remove("active"));
-          this.classList.add("active");
-        });
-      });
-    }
-
-    // 3. Filter Logic (Keywords and Checkboxes)
-    const keywordsList = document.querySelector(".keywords-list");
-    const checkboxes = document.querySelectorAll(
-      '.checkbox-group input[type="checkbox"]',
-    );
-
-    if (keywordsList && checkboxes.length > 0) {
-      checkboxes.forEach((checkbox) => {
-        checkbox.addEventListener("change", function () {
-          const keyword = this.dataset.keyword;
-          if (this.checked) {
-            if (
-              !document.querySelector(`.keyword-tag[data-keyword="${keyword}"]`)
-            ) {
-              const newTag = document.createElement("span");
-              newTag.className = "keyword-tag";
-              newTag.setAttribute("data-keyword", keyword);
-              newTag.innerHTML = `${keyword} <i class="fa-solid fa-xmark remove-keyword-icon"></i>`;
-              keywordsList.appendChild(newTag);
-            }
-          } else {
-            const tagToRemove = document.querySelector(
-              `.keyword-tag[data-keyword="${keyword}"]`,
-            );
-            if (tagToRemove) {
-              tagToRemove.remove();
-            }
-          }
-        });
-      });
-
-      keywordsList.addEventListener("click", function (event) {
-        const keywordIcon = event.target.closest(".remove-keyword-icon");
-        if (keywordIcon) {
-          const keywordTag = keywordIcon.closest(".keyword-tag");
-          const keywordText = keywordTag.dataset.keyword;
-          const checkbox = document.querySelector(
-            `.checkbox-container input[data-keyword="${keywordText}"]`,
-          );
-          if (checkbox) {
-            checkbox.checked = false;
-          }
-          keywordTag.remove();
-        }
-      });
-    }
+    keywordsList.addEventListener("click", function (event) {
+      const keywordIcon = event.target.closest(".js-remove-keyword");
+      if (keywordIcon) {
+        const keywordTag = keywordIcon.closest(".js-keyword-tag");
+        const keywordText = keywordTag.dataset.keyword;
+        removeCategoryFilter(keywordText);
+        keywordTag.remove();
+      }
+    });
   }
 
   // --- Logic for Product Detail Pages (product-*.html) ---
