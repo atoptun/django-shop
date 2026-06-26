@@ -13,11 +13,17 @@ from apps.reviews.models import Review
 class User(AbstractUser, SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
     profile: "Profile"
+    addresses: models.QuerySet["Address"]
     orders: models.QuerySet["Order"]
     reviews: models.QuerySet["Review"]
 
     class Meta:
         db_table = "auth_user"
+
+    def save(self, *args, **kwargs):
+        if self.email:
+            self.username = self.email
+        super().save(*args, **kwargs)
 
 
 class Profile(SafeDeleteModel):
@@ -27,8 +33,6 @@ class Profile(SafeDeleteModel):
     phone = PhoneNumberField(blank=True)
     city = models.CharField(max_length=100, blank=True)
     address = models.TextField(blank=True)
-
-    addresses: models.QuerySet["Address"]
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -52,7 +56,7 @@ def create_user_profile(sender, instance, created, **kwargs):
 class Address(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
 
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="addresses")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="addresses")
     recipient_name = models.CharField(max_length=255)
     phone = PhoneNumberField()
     city = models.CharField(max_length=100)
@@ -70,7 +74,7 @@ class Address(SafeDeleteModel):
 
     def save(self, *args, **kwargs):
         if self.is_default:
-            Address.objects.filter(profile=self.profile, is_default=True).exclude(
-                pk=self.pk
-            ).update(is_default=False)
+            Address.objects.filter(user=self.user, is_default=True).exclude(pk=self.pk).update(
+                is_default=False
+            )
         super().save(*args, **kwargs)

@@ -57,11 +57,11 @@ class Command(BaseCommand):
 
             # The first address will be default if no default address exists yet
             is_default = False
-            if not profile.addresses.filter(is_default=True).exists() and created_count == 0:
+            if not user.addresses.filter(is_default=True).exists() and created_count == 0:
                 is_default = True
 
             Address.objects.create(
-                profile=profile,
+                user=user,
                 recipient_name=fake.name(),
                 phone=phone_num,
                 city=fake.city(),

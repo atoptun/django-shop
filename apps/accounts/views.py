@@ -55,11 +55,11 @@ class AddressListView(LoginRequiredMixin, ListView):
     model = Address
     template_name = "accounts/address_list.html"
     context_object_name = "addresses"
-    paginate_by = 10
+    paginate_by = 5
 
     def get_queryset(self):
         request = cast(AuthenticatedRequest, self.request)
-        return Address.objects.filter(profile=request.user.profile).order_by("-created_at")
+        return Address.objects.filter(user=request.user).order_by("-created_at")
 
 
 class AddressCreateView(LoginRequiredMixin, CreateView):
@@ -69,7 +69,7 @@ class AddressCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         request = cast(AuthenticatedRequest, self.request)
-        form.instance.profile = request.user.profile
+        form.instance.user = request.user
         messages.success(self.request, "Address added successfully!")
         return super().form_valid(form)
 
@@ -84,7 +84,7 @@ class AddressUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         request = cast(AuthenticatedRequest, self.request)
-        return Address.objects.filter(profile=request.user.profile)
+        return Address.objects.filter(user=request.user)
 
     def form_valid(self, form):
         messages.success(self.request, "Address updated successfully!")
@@ -100,7 +100,7 @@ class AddressDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_queryset(self):
         request = cast(AuthenticatedRequest, self.request)
-        return Address.objects.filter(profile=request.user.profile)
+        return Address.objects.filter(user=request.user)
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Address deleted successfully!")
