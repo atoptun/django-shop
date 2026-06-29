@@ -51,7 +51,7 @@ class AddressFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Address
 
-    profile = factory.SubFactory(ProfileFactory)  # type: ignore
+    user = factory.SubFactory(UserFactory)  # type: ignore
     recipient_name = "Jane Doe"
     phone = "+380501234567"
     city = "Kyiv"

@@ -149,6 +149,15 @@ wheels = [
 ]
 
 [[package]]
+name = "django-json-widget"
+version = "2.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/30/923ff229ee284bf2fac7a289ca446fb2725d94b2a34c7cb006c4f811e6c0/django_json_widget-2.1.1.tar.gz", hash = "sha256:dc8102e2fa9accd0f661ea1988c9389f8fbbcb8a4bb9cbfb8fa0525b3c1265c1", size = 384026, upload-time = "2025-12-12T11:22:05.953Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/19/6a/bdbcc079d11d312e463565819089fe83ae6c7f17f274effa4777ca069f64/django_json_widget-2.1.1-py2.py3-none-any.whl", hash = "sha256:2fa3d6fb6dba9436a29ad2cee23fa794381f54a6678ec7d74e990ae081d9800b", size = 293721, upload-time = "2025-12-12T11:22:04.195Z" },
+]
+
+[[package]]
 name = "django-phonenumber-field"
 version = "8.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -190,11 +199,13 @@ dependencies = [
     { name = "django" },
     { name = "django-compressor" },
     { name = "django-filter" },
+    { name = "django-json-widget" },
     { name = "django-phonenumber-field" },
     { name = "django-ratelimit" },
     { name = "django-safedelete" },
     { name = "django-static-precompiler" },
     { name = "django-stubs" },
+    { name = "django-unfold" },
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
     { name = "drf-spectacular" },
@@ -203,6 +214,7 @@ dependencies = [
     { name = "pillow" },
     { name = "psycopg2-binary" },
     { name = "pydantic-settings" },
+    { name = "pygments" },
     { name = "python-decouple" },
     { name = "uvicorn" },
 ]
@@ -228,11 +240,13 @@ requires-dist = [
     { name = "django", specifier = ">=6.0.6" },
     { name = "django-compressor", specifier = ">=4.6.0" },
     { name = "django-filter", specifier = ">=25.2" },
+    { name = "django-json-widget", specifier = ">=2.1.1" },
     { name = "django-phonenumber-field", specifier = ">=8.4.0" },
     { name = "django-ratelimit", specifier = ">=4.1.0" },
     { name = "django-safedelete", specifier = ">=1.4.1" },
     { name = "django-static-precompiler", specifier = ">=2.4" },
     { name = "django-stubs", specifier = ">=6.0.5" },
+    { name = "django-unfold", specifier = ">=0.99.0" },
     { name = "djangorestframework", specifier = ">=3.17.1" },
     { name = "djangorestframework-simplejwt", specifier = ">=5.5.1" },
     { name = "drf-spectacular", specifier = ">=0.29.0" },
@@ -241,6 +255,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=12.2.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.12" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
+    { name = "pygments", specifier = ">=2.20.0" },
     { name = "python-decouple", specifier = ">=3.8" },
     { name = "uvicorn", specifier = ">=0.49.0" },
 ]
@@ -299,6 +314,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d8/01/419bc3cd882f3ec645d5a4511085202dd6bd3ef8d385871dcd2d32cc15b3/django_stubs_ext-6.0.5.tar.gz", hash = "sha256:1cc325e991303849bce70e19748981b225ef08b37256f263e113caf97cd3bcc0", size = 6666, upload-time = "2026-05-25T08:46:36.012Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ef/bf/7ee71071d84ad4e0efcd77e2681afed254a5f65c27524441a9caf8c60467/django_stubs_ext-6.0.5-py3-none-any.whl", hash = "sha256:a9932c8233d6dd4e34ae0b192026379c1a9be8f0b7c27aa1fa09ae215169773e", size = 10362, upload-time = "2026-05-25T08:46:34.467Z" },
+]
+
+[[package]]
+name = "django-unfold"
+version = "0.99.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d3/4a/a41d4e38f51e2e832016ddaa8945caf579649aa0d1b017f893c47b6d4457/django_unfold-0.99.0.tar.gz", hash = "sha256:7f60f290a5ea533c575244b27f21ad2672cbdd52a4f059cfce9ebe4c2b28ee83", size = 1125919, upload-time = "2026-06-23T16:22:57.982Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1a/a9/bb82cea6516cda3f069d69daff349b499b6216a407548d6e998f9857a85b/django_unfold-0.99.0-py3-none-any.whl", hash = "sha256:86e5bfbf8ab614e5eb28435e2707f6948b305cbd66c4a8ef09c78c964f5b2afd", size = 1253515, upload-time = "2026-06-23T16:22:56.376Z" },
 ]
 
 [[package]]

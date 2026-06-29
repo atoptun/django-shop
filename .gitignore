@@ -1,3 +1,4 @@
+docs/user_data.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -150,6 +151,7 @@ activemq-data/
 
 # Environments
 .env
+.env.test
 .envrc
 .venv
 env/

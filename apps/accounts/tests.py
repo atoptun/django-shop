@@ -22,8 +22,8 @@ pytestmark = pytest.mark.django_db
 
 
 def test_user_creation():
-    user = UserFactory(username="testuser", email="test@example.com")
-    assert user.username == "testuser"
+    user = UserFactory(email="test@example.com")
+    assert user.username == "test@example.com"
     assert user.email == "test@example.com"
     assert user.is_active is True
     assert user.check_password("password123") is True
@@ -202,9 +202,9 @@ def test_order_history_view(client):
 def test_address_list_view(client):
     user = UserFactory()
     client.force_login(user)
-    # Create 7 addresses for this user's profile
+    # Create 7 addresses for this user
     for i in range(7):
-        AddressFactory(profile=user.profile, recipient_name=f"Recipient {i}")
+        AddressFactory(user=user, recipient_name=f"Recipient {i}")
 
     url = reverse("accounts:address_list")
 
@@ -301,8 +301,8 @@ def test_address_model_creation():
 
 def test_address_default_exclusivity():
     user = UserFactory()
-    addr1 = AddressFactory(profile=user.profile, is_default=True)
-    addr2 = AddressFactory(profile=user.profile, is_default=True)
+    addr1 = AddressFactory(user=user, is_default=True)
+    addr2 = AddressFactory(user=user, is_default=True)
 
     # Reload from DB
     addr1.refresh_from_db()
@@ -314,7 +314,7 @@ def test_address_default_exclusivity():
 
     # Verify it does not affect other users' default addresses
     other_user = UserFactory()
-    other_addr = AddressFactory(profile=other_user.profile, is_default=True)
+    other_addr = AddressFactory(user=other_user, is_default=True)
 
     addr2.refresh_from_db()
     assert addr2.is_default is True
@@ -363,15 +363,15 @@ def test_address_create_view(client):
     assert response.status_code == 302
     assert response.url == reverse("accounts:address_list")
 
-    # Check the address was created in DB and associated with user's profile
-    assert user.profile.addresses.filter(recipient_name="New Recipient").exists() is True
+    # Check the address was created in DB and associated with user
+    assert user.addresses.filter(recipient_name="New Recipient").exists() is True
 
 
 def test_address_update_view(client):
     user = UserFactory()
     client.force_login(user)
 
-    address = AddressFactory(profile=user.profile, recipient_name="Old Name")
+    address = AddressFactory(user=user, recipient_name="Old Name")
     url = reverse("accounts:address_edit", kwargs={"pk": address.pk})
 
     # GET request
@@ -400,7 +400,7 @@ def test_address_update_view_permission_denied(client):
     client.force_login(user)
 
     # Address belongs to other_user
-    address = AddressFactory(profile=other_user.profile, recipient_name="Other User Address")
+    address = AddressFactory(user=other_user, recipient_name="Other User Address")
     url = reverse("accounts:address_edit", kwargs={"pk": address.pk})
 
     response = client.get(url)
@@ -411,7 +411,7 @@ def test_address_delete_view(client):
     user = UserFactory()
     client.force_login(user)
 
-    address = AddressFactory(profile=user.profile)
+    address = AddressFactory(user=user)
     url = reverse("accounts:address_delete", kwargs={"pk": address.pk})
 
     # GET request (confirmation page)
@@ -425,7 +425,7 @@ def test_address_delete_view(client):
     assert response.url == reverse("accounts:address_list")
 
     # Address should be deleted
-    assert user.profile.addresses.filter(pk=address.pk).exists() is False
+    assert user.addresses.filter(pk=address.pk).exists() is False
 
 
 def test_address_delete_view_permission_denied(client):
@@ -434,7 +434,7 @@ def test_address_delete_view_permission_denied(client):
     client.force_login(user)
 
     # Address belongs to other_user
-    address = AddressFactory(profile=other_user.profile)
+    address = AddressFactory(user=other_user)
     url = reverse("accounts:address_delete", kwargs={"pk": address.pk})
 
     response = client.post(url)
