@@ -29,15 +29,15 @@
         </li>
       </ul>
     </nav>
-    {% if not user.is_authenticated %}
-      <!-- Block for unauthorized user -->
-      <div class="header__auth-buttons" id="auth-guest">
-        <a href="{% url 'accounts:login' %}" class="button button--secondary">Sign in</a>
-        <a href="{% url 'accounts:register' %}" class="button button--primary">Register</a>
-      </div>
-    {% else %}
-      <!-- Block for authorized user -->
-      <div class="header__user-actions" id="auth-user">
+    <div class="header__user-actions">
+      {% if not user.is_authenticated %}
+        <!-- Block for unauthorized user -->
+        <div class="header__auth-buttons" id="auth-guest">
+          <a href="{% url 'accounts:login' %}" class="button button--secondary">Sign in</a>
+          <a href="{% url 'accounts:register' %}" class="button button--primary">Register</a>
+        </div>
+      {% else %}
+        <!-- Block for authorized user -->
         <a href="{% url 'accounts:profile' %}"
            class="user-icon"
            aria-label="My Account">
@@ -46,15 +46,16 @@
                height="30"
                alt="User Account">
         </a>
-        <a href="{% url 'accounts:order_history' %}"
-           class="cart-icon"
-           aria-label="Shopping Cart">
-          <img src="{% static 'img/icons/Shopping_bag.svg' %}"
-               width="30"
-               height="30"
-               alt="Shopping Cart">
-        </a>
-      </div>
-    {% endif %}
+      {% endif %}
+      <a href="{% url 'orders:cart' %}"
+         class="cart-icon"
+         aria-label="Shopping Cart">
+        <img src="{% static 'img/icons/Shopping_bag.svg' %}"
+             width="30"
+             height="30"
+             alt="Shopping Cart">
+        <span class="cart-badge js-cart-count">{{ cart_count|default:"0" }}</span>
+      </a>
+    </div>
   </div>
 </header>

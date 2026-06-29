@@ -27,7 +27,7 @@
               <div class="cart-item__details">
                 <h2 class="cart-item__name">{{ item.product.name }}</h2>
                 <div class="cart-item__price-info">
-                  <p class="cart-item__price" data-item-total-price>${{ item.total_price }}</p>
+                  <p class="cart-item__price" data-item-total-price>${{ item.subtotal }}</p>
                   <span class="cart-item__price-tag">
                     {% if item.product.price_tag %}
                       {{ item.product.price_tag }}
@@ -41,8 +41,7 @@
                 <div class="cart-item__quantity-selector">
                   <form method="POST"
                         action="{% url 'orders:update_cart' item.product.id %}"
-                        style="display: flex;
-                               align-items: center">
+                        class="cart-item__quantity-form">
                     {% csrf_token %}
                     <button type="submit"
                             name="action"
@@ -72,10 +71,8 @@
             </div>
           </div>
         {% empty %}
-          <div class="empty-cart-message"
-               style="text-align: center;
-                      padding: 3rem 0">
-            <p style="margin-bottom: 1.5rem;">Your cart is currently empty.</p>
+          <div class="empty-cart-message">
+            <p class="empty-cart-message__text">Your cart is currently empty.</p>
             <a href="{% url 'products:list' %}" class="button button--primary">Shop Products</a>
           </div>
         {% endfor %}

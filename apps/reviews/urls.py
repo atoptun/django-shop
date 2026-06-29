@@ -1,13 +1,13 @@
 from django.urls import path
-from django.views.generic import TemplateView
+
+from . import views
 
 app_name = "reviews"
 
-
 urlpatterns = [
     path(
-        "reviews/",
-        TemplateView.as_view(template_name="reviews/review_list.html"),
-        name="review_list",
+        "product/<slug:slug>/review",
+        views.AddReviewView.as_view(),
+        name="add_review",
     ),
 ]
