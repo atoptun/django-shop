@@ -1,7 +1,7 @@
 import factory
 
 from apps.accounts.factories import UserFactory
-from apps.orders.models import Cart, CartItem, Order, OrderItem, Payment
+from apps.orders.models import Cart, CartItem, Order, OrderItem, Payment, PaymentMethod
 from apps.products.factories import ProductFactory
 
 
@@ -41,10 +41,19 @@ class OrderItemFactory(factory.django.DjangoModelFactory):
     price = 10.00
 
 
+class PaymentMethodFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = PaymentMethod
+
+    code = "debit"
+    name = "Debit Card"
+    is_active = True
+
+
 class PaymentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Payment
 
     order = factory.SubFactory(OrderFactory)  # type: ignore
-    method = Payment.Method.CREDIT_CARD
+    payment_method = factory.SubFactory(PaymentMethodFactory)  # type: ignore
     transaction_id = factory.Sequence(lambda n: f"txn_{n}")  # type: ignore
