@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
@@ -31,11 +33,11 @@ class Order(SafeDeleteModel):
         ordering = ["-created_at"]
 
     @property
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         # TODO: Implement a proper URL for order detail view
         return reverse("orders:order_detail", kwargs={"pk": self.pk})
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Order #{self.pk} by {self.user.username if self.user else 'Unknown'}"
 
 
@@ -59,10 +61,10 @@ class OrderItem(SafeDeleteModel):
         ]
 
     @property
-    def subtotal(self) -> models.DecimalField:
+    def subtotal(self) -> Any:
         return self.price * self.quantity
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.quantity} x {self.product.name if self.product else 'Unknown Product'}"
 
 
@@ -80,5 +82,37 @@ class Payment(SafeDeleteModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Payment for Order #{self.order.pk} via {self.method}"
+
+
+class Cart(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cart"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"Cart of {self.user.username}"
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="cart_items")
+    quantity = models.PositiveIntegerField(default=1)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["cart", "product"], name="unique_cart_product")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.quantity} x {self.product.name} in Cart"
+
+    @property
+    def subtotal(self) -> Any:
+        return self.product.price * self.quantity

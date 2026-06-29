@@ -41,10 +41,15 @@
           </div>
           <div class="product-description">{{ product.description|linebreaks }}</div>
           <!-- Container for managing the cart -->
-          <div class="cart-controls">
+          <div class="cart-controls"
+               data-product-id="{{ product.id }}"
+               data-add-url="{% url 'orders:add_to_cart' product.id %}"
+               data-update-url="{% url 'orders:update_cart' product.id %}">
             <form method="post"
-                  action="{% url 'add_to_cart' product.id as add_to_cart_url___ %}"
-                  id="add-to-cart-form">
+                  action="{% url 'orders:add_to_cart' product.id %}"
+                  id="add-to-cart-form"
+                  class="add-to-cart-form
+                         {% if in_cart_quantity > 0 %}is-hidden{% endif %}">
               {% csrf_token %}
               <!-- Add to Cart button (visible by default) -->
               <button type="submit"
@@ -55,13 +60,15 @@
               </button>
             </form>
             <!-- Quantity counter (hidden by default, can be controlled via JS or updated dynamically) -->
-            <div class="quantity-counter is-hidden" id="quantity-counter">
+            <div class="quantity-counter
+                        {% if in_cart_quantity == 0 %}is-hidden{% endif %}"
+                 id="quantity-counter">
               <button class="quantity-btn"
                       data-action="decrease"
                       aria-label="Decrease quantity">
                 <i class="fa-solid fa-minus"></i>
               </button>
-              <span class="quantity-value">1 in cart</span>
+              <span class="quantity-value">{{ in_cart_quantity }} in cart</span>
               <button class="quantity-btn"
                       data-action="increase"
                       aria-label="Increase quantity">

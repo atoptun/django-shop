@@ -17,6 +17,25 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  function showAlertMessage(messageText, tags = "error") {
+    const container = document.getElementById("messages-container");
+    if (!container) return;
+
+    const alertDiv = document.createElement("div");
+    alertDiv.className = `alert alert-${tags}`;
+    alertDiv.textContent = messageText;
+
+    container.appendChild(alertDiv);
+
+    setTimeout(() => {
+      alertDiv.style.transition = "transform 0.4s ease, opacity 0.4s ease";
+      alertDiv.style.opacity = "0";
+      alertDiv.style.transform = "translateX(50px)";
+
+      setTimeout(() => alertDiv.remove(), 400);
+    }, 4000);
+  }
+
   // Filter Logic (Keywords and Checkboxes)
   const form = document.getElementById("js-filter-form");
   const sortInput = document.getElementById("js-sort-input");
@@ -108,7 +127,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // "Add to Cart" Button and Counter
     const cartControls = document.querySelector(".cart-controls");
     if (cartControls) {
-      const addToCartBtn = cartControls.querySelector("#add-to-cart-btn");
+      const productId = cartControls.dataset.productId;
+      const addUrl = cartControls.dataset.addUrl;
+      const updateUrl = cartControls.dataset.updateUrl;
+
+      const addToCartForm = cartControls.querySelector("#add-to-cart-form");
       const quantityCounter = cartControls.querySelector("#quantity-counter");
       const decreaseBtn = quantityCounter.querySelector(
         '[data-action="decrease"]',
@@ -118,32 +141,67 @@ document.addEventListener("DOMContentLoaded", function () {
       );
       const quantityValueSpan =
         quantityCounter.querySelector(".quantity-value");
-      let quantity = 0;
-      function updateView() {
-        if (quantity === 0) {
-          addToCartBtn.classList.remove("is-hidden");
-          quantityCounter.classList.add("is-hidden");
-        } else {
-          addToCartBtn.classList.add("is-hidden");
-          quantityCounter.classList.remove("is-hidden");
-          quantityValueSpan.textContent = `${quantity} in cart`;
+
+      const csrfToken = cartControls.querySelector(
+        "[name=csrfmiddlewaretoken]",
+      ).value;
+
+      async function sendCartUpdate(url, actionValue) {
+        const formData = new FormData();
+        formData.append("action", actionValue);
+
+        try {
+          const response = await axios.post(url, formData, {
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+              "X-CSRFToken": csrfToken,
+            },
+          });
+          const data = response.data;
+          if (data.success) {
+            updateView(data.product_quantity, data.cart_total_items);
+          }
+        } catch (error) {
+          // if (error.response && error.response.data && error.response.data.error) {
+          if (error?.response?.data?.error) {
+            showAlertMessage(error.response.data.error, "error");
+          } else {
+            console.error("Cart update error:", error);
+          }
         }
       }
-      addToCartBtn.addEventListener("click", function () {
-        quantity = 1;
-        updateView();
-      });
-      decreaseBtn.addEventListener("click", function () {
-        if (quantity > 0) {
-          quantity--;
-          updateView();
+
+      function updateView(qty, totalItems) {
+        if (qty <= 0) {
+          addToCartForm.classList.remove("is-hidden");
+          quantityCounter.classList.add("is-hidden");
+        } else {
+          addToCartForm.classList.add("is-hidden");
+          quantityCounter.classList.remove("is-hidden");
+          quantityValueSpan.textContent = `${qty} in cart`;
         }
+
+        // Update header count
+        const headerCartBadge = document.querySelector(".js-cart-count");
+        if (headerCartBadge) {
+          headerCartBadge.textContent = totalItems;
+        }
+      }
+
+      if (addToCartForm) {
+        addToCartForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          sendCartUpdate(addUrl, "increase");
+        });
+      }
+
+      decreaseBtn.addEventListener("click", function () {
+        sendCartUpdate(updateUrl, "decrease");
       });
+
       increaseBtn.addEventListener("click", function () {
-        quantity++;
-        updateView();
+        sendCartUpdate(updateUrl, "increase");
       });
-      updateView();
     }
   }
 
@@ -152,42 +210,73 @@ document.addEventListener("DOMContentLoaded", function () {
   if (cartPageContent) {
     const cartItemsList = document.getElementById("cart-items-list");
     const cartTotalPriceElem = document.getElementById("cart-total-price");
-    function updateCartTotal() {
-      let total = 0;
-      document.querySelectorAll(".cart-item").forEach((item) => {
-        const priceText = item.querySelector(
-          "[data-item-total-price]",
-        ).textContent;
-        if (priceText) {
-          total += parseFloat(priceText.replace("$", ""));
-        }
-      });
-      if (cartTotalPriceElem)
-        cartTotalPriceElem.textContent = `$${total.toFixed(2)}`;
-    }
+
     if (cartItemsList) {
-      cartItemsList.addEventListener("click", function (event) {
-        const cartItem = event.target.closest(".cart-item");
-        if (!cartItem) return;
-        const quantityElem = cartItem.querySelector(".quantity-value-cart");
-        const itemTotalElem = cartItem.querySelector("[data-item-total-price]");
-        const basePrice = parseFloat(cartItem.dataset.price);
-        let quantity = parseInt(quantityElem.textContent);
-        if (event.target.closest('[data-action="increase"]')) {
-          quantity++;
-        } else if (event.target.closest('[data-action="decrease"]')) {
-          quantity = quantity > 1 ? quantity - 1 : 0;
+      cartItemsList.addEventListener("click", async function (event) {
+        const btn = event.target.closest("button[type='submit']");
+        if (!btn) return;
+        event.preventDefault();
+
+        const form = btn.closest("form");
+        const cartItem = btn.closest(".cart-item");
+        if (!form || !cartItem) return;
+
+        const action = btn.value;
+        const url = form.getAttribute("action");
+        const csrfToken = form.querySelector(
+          "[name=csrfmiddlewaretoken]",
+        ).value;
+
+        const formData = new FormData(form);
+        if (action) {
+          formData.append("action", action);
         }
-        if (event.target.closest('[data-action="remove"]') || quantity === 0) {
-          cartItem.remove();
-        } else {
-          quantityElem.textContent = quantity;
-          itemTotalElem.textContent = `$${(basePrice * quantity).toFixed(2)}`;
+
+        try {
+          const response = await axios.post(url, formData, {
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+              "X-CSRFToken": csrfToken,
+            },
+          });
+
+          const data = response.data;
+
+          if (data.success) {
+            const quantityElem = cartItem.querySelector(".quantity-value-cart");
+            const itemTotalElem = cartItem.querySelector(
+              "[data-item-total-price]",
+            );
+
+            if (data.product_quantity <= 0) {
+              cartItem.remove();
+              if (document.querySelectorAll(".cart-item").length === 0) {
+                location.reload();
+              }
+            } else {
+              if (quantityElem)
+                quantityElem.textContent = data.product_quantity;
+              if (itemTotalElem) itemTotalElem.textContent = data.item_subtotal;
+            }
+
+            if (cartTotalPriceElem)
+              cartTotalPriceElem.textContent = data.cart_total_price;
+
+            const headerCartBadge = document.querySelector(".js-cart-count");
+            if (headerCartBadge)
+              headerCartBadge.textContent = data.cart_total_items;
+          }
+        } catch (error) {
+          // if (error.response && error.response.data && error.response.data.error) {
+          if (error?.response?.data?.error) {
+            showAlertMessage(error.response.data.error, "error");
+          } else {
+            console.error("Error updating cart:", error);
+            form.submit();
+          }
         }
-        updateCartTotal();
       });
     }
-    updateCartTotal();
   }
 
   // --- Logic for Account and Admin Pages ---

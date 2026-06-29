@@ -69,3 +69,11 @@ class ProductDetailView(DetailView):
 
     def get_queryset(self):
         return self.model.objects.filter(is_active=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.orders.services import CartService
+
+        cart_service = CartService(self.request)
+        context["in_cart_quantity"] = cart_service.get_product_quantity(self.object.id)
+        return context
