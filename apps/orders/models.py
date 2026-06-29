@@ -2,7 +2,7 @@ from typing import Any
 
 from django.conf import settings
 from django.db import models
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
@@ -35,10 +35,11 @@ class Order(SafeDeleteModel):
     class Meta:
         ordering = ["-created_at"]
 
-    @property
     def get_absolute_url(self) -> str:
-        # TODO: Implement a proper URL for order detail view
-        return reverse("orders:order_detail", kwargs={"pk": self.pk})
+        try:
+            return reverse("orders:order_detail", kwargs={"pk": self.pk})
+        except NoReverseMatch:
+            return reverse("accounts:order_history")
 
     def __str__(self) -> str:
         return f"Order #{self.pk} by {self.user.username if self.user else 'Unknown'}"
