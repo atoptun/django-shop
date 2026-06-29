@@ -29,6 +29,9 @@ class Order(SafeDeleteModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    items: models.QuerySet["OrderItem"]
+    payment: "Payment"
+
     class Meta:
         ordering = ["-created_at"]
 
@@ -114,6 +117,8 @@ class Cart(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    items: models.QuerySet["CartItem"]
 
     def __str__(self) -> str:
         return f"Cart of {self.user.username}"

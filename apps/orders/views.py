@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
@@ -34,7 +35,6 @@ class AddToCartView(View):
         except ValueError as e:
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"success": False, "error": str(e)}, status=400)
-            from django.contrib import messages
 
             messages.error(request, str(e))
             return redirect("orders:cart")
@@ -78,7 +78,6 @@ class UpdateCartView(View):
         except ValueError as e:
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"success": False, "error": str(e)}, status=400)
-            from django.contrib import messages
 
             messages.error(request, str(e))
             return redirect("orders:cart")
@@ -130,14 +129,47 @@ class CheckoutView(LoginRequiredMixin, View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         cart_service = CartService(request)
         if cart_service.get_total_items() == 0:
-            from django.contrib import messages
-
             messages.warning(request, "Your cart is empty.")
             return redirect("orders:cart")
 
         from apps.orders.forms import CheckoutForm
 
         form = CheckoutForm(user=request.user)
+        return self._render_checkout_page(request, form, cart_service)
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        cart_service = CartService(request)
+        if cart_service.get_total_items() == 0:
+            messages.warning(request, "Your cart is empty.")
+            return redirect("orders:cart")
+
+        from apps.orders.forms import CheckoutForm
+
+        form = CheckoutForm(request.POST, user=request.user)
+        if not form.is_valid():
+            return self._render_checkout_page(request, form, cart_service)
+
+        cleaned_data = form.cleaned_data
+        shipping_address = self._get_shipping_address(request, cleaned_data)
+        payment_method = cleaned_data["payment_method"]
+
+        try:
+            order = self._create_order_transaction(
+                cart_service, request.user, shipping_address, payment_method
+            )
+        except ValueError as e:
+            messages.error(request, str(e))
+            return self._render_checkout_page(request, form, cart_service)
+
+        self._send_order_notifications(request.user, order)
+
+        messages.success(request, f"Order #{order.pk} placed successfully!")
+        return redirect("accounts:order_history")
+
+    def _render_checkout_page(
+        self, request: HttpRequest, form: Any, cart_service: CartService
+    ) -> HttpResponse:
+        """Renders the checkout page with the provided form and cart details."""
         context = {
             "form": form,
             "cart_items": cart_service.get_items(),
@@ -148,109 +180,77 @@ class CheckoutView(LoginRequiredMixin, View):
 
         return render(request, "orders/checkout.html", context)
 
-    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        cart_service = CartService(request)
-        if cart_service.get_total_items() == 0:
-            from django.contrib import messages
-
-            messages.warning(request, "Your cart is empty.")
-            return redirect("orders:cart")
-
-        from apps.orders.forms import CheckoutForm
-
-        form = CheckoutForm(request.POST, user=request.user)
-        if not form.is_valid():
-            context = {
-                "form": form,
-                "cart_items": cart_service.get_items(),
-                "cart_total": cart_service.get_total_price(),
-                "profile": getattr(request.user, "profile", None),
-            }
-            from django.shortcuts import render
-
-            return render(request, "orders/checkout.html", context)
-
-        cleaned_data = form.cleaned_data
+    def _get_shipping_address(self, request: HttpRequest, cleaned_data: dict[str, Any]) -> str:
+        """Determines the shipping address based on the user's selection or input."""
         address_choice: str = cleaned_data.get("address_choice", "")
-        payment_method = cleaned_data["payment_method"]
-
         if address_choice and address_choice != "new":
             from apps.accounts.models import Address
 
             addr = Address.objects.get(id=int(address_choice), user=request.user)
-            shipping_address = (
+            return (
                 f"Recipient: {addr.recipient_name}\n"
                 f"Phone: {addr.phone}\n"
                 f"City: {addr.city}\n"
                 f"Address: {addr.address_line}"
             )
-        else:
-            shipping_address = (
-                f"Recipient: {cleaned_data['full_name']}\n"
-                f"Phone: {cleaned_data['phone']}\n"
-                f"City: {cleaned_data['city']}\n"
-                f"Address: {cleaned_data['address']}"
-            )
+        return (
+            f"Recipient: {cleaned_data['full_name']}\n"
+            f"Phone: {cleaned_data['phone']}\n"
+            f"City: {cleaned_data['city']}\n"
+            f"Address: {cleaned_data['address']}"
+        )
 
+    def _create_order_transaction(
+        self, cart_service: CartService, user: Any, shipping_address: str, payment_method: Any
+    ) -> Any:
+        """Create order, order items, and reserve stock atomically"""
         from uuid import uuid4
 
-        from django.contrib import messages
         from django.db import transaction
 
         from apps.orders.models import CartItem, Order, OrderItem, Payment
 
-        try:
-            with transaction.atomic():
-                cart_items = cart_service.get_items()
-                # 1. Concurrency safe stock reservation
-                for item in cart_items:
-                    product = Product.objects.select_for_update().get(id=item["product"].id)
-                    if product.stock < item["quantity"]:
-                        raise ValueError(
-                            f"Not enough stock for {product.name}. "
-                            f"Available: {product.stock}, in cart: {item['quantity']}."
-                        )
-                    product.stock -= item["quantity"]
-                    product.save()
-
-                # 2. Order creation
-                order = Order.objects.create(
-                    user=request.user,
-                    status=Order.Status.PENDING,
-                    total_price=cart_service.get_total_price(),
-                    shipping_address=shipping_address,
-                )
-
-                # 3. Order Items creation
-                for item in cart_items:
-                    OrderItem.objects.create(
-                        order=order,
-                        product=item["product"],
-                        quantity=item["quantity"],
-                        price=item["product"].price,
+        with transaction.atomic():
+            cart_items = cart_service.get_items()
+            # 1. Concurrency-safe stock reservation (select_for_update)
+            for item in cart_items:
+                product = Product.objects.select_for_update().get(id=item["product"].id)
+                if product.stock < item["quantity"]:
+                    raise ValueError(
+                        f"Not enough stock for {product.name}. "
+                        f"Available: {product.stock}, in cart: {item['quantity']}."
                     )
+                product.stock -= item["quantity"]
+                product.save()
 
-                # 4. Payment record creation
-                Payment.objects.create(
-                    order=order, payment_method=payment_method, transaction_id=f"PAY-{uuid4()}"
+            # 2. Order creation
+            order = Order.objects.create(
+                user=user,
+                status=Order.Status.PENDING,
+                total_price=cart_service.get_total_price(),
+                shipping_address=shipping_address,
+            )
+
+            # 3. Order Items creation
+            for item in cart_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item["product"],
+                    quantity=item["quantity"],
+                    price=item["product"].price,
                 )
 
-                # 5. Clear Cart
-                CartItem.objects.filter(cart=cart_service.cart).delete()
+            # 4. Payment record creation
+            Payment.objects.create(
+                order=order, payment_method=payment_method, transaction_id=f"PAY-{uuid4()}"
+            )
 
-        except ValueError as e:
-            messages.error(request, str(e))
-            context = {
-                "form": form,
-                "cart_items": cart_service.get_items(),
-                "cart_total": cart_service.get_total_price(),
-                "profile": getattr(request.user, "profile", None),
-            }
-            from django.shortcuts import render
+            # 5. Clear Cart
+            CartItem.objects.filter(cart=cart_service.cart).delete()
+            return order
 
-            return render(request, "orders/checkout.html", context)
-
-        # 6. Email notifications
+    def _send_order_notifications(self, user: Any, order: Any) -> None:
+        """Send email notifications to the user and admin about the new order."""
         from django.conf import settings
         from django.contrib.auth import get_user_model
         from django.core.mail import send_mail
@@ -259,7 +259,7 @@ class CheckoutView(LoginRequiredMixin, View):
             send_mail(
                 subject=f"Order Confirmation - Order #{order.pk}",
                 message=(
-                    f"Hello {request.user.username or 'Customer'},\n\n"
+                    f"Hello {user.username or 'Customer'},\n\n"
                     f"Thank you for your order!\n\n"
                     f"Order Details:\n"
                     f"Order ID: #{order.pk}\n"
@@ -268,7 +268,7 @@ class CheckoutView(LoginRequiredMixin, View):
                     f"We will process your order soon."
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[request.user.email],
+                recipient_list=[user.email],
                 fail_silently=True,
             )
 
@@ -280,7 +280,7 @@ class CheckoutView(LoginRequiredMixin, View):
             send_mail(
                 subject=f"New Order Placed - Order #{order.pk}",
                 message=(
-                    f"A new order #{order.pk} has been placed by user: {request.user.username}.\n"
+                    f"A new order #{order.pk} has been placed by user: {user.username}.\n"
                     f"Total: ${order.total_price}\n"
                     f"Shipping Address:\n{order.shipping_address}"
                 ),
@@ -290,6 +290,3 @@ class CheckoutView(LoginRequiredMixin, View):
             )
         except Exception as mail_err:
             print(f"Failed to send checkout email notifications: {mail_err}")
-
-        messages.success(request, f"Order #{order.pk} placed successfully!")
-        return redirect("accounts:order_history")
