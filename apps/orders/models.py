@@ -84,9 +84,7 @@ class Payment(SafeDeleteModel):
         return f"Payment for Order #{self.order.pk} via {self.method}"
 
 
-class Cart(SafeDeleteModel):
-    _safedelete_policy = SOFT_DELETE_CASCADE
-
+class Cart(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cart"
     )
@@ -97,9 +95,7 @@ class Cart(SafeDeleteModel):
         return f"Cart of {self.user.username}"
 
 
-class CartItem(SafeDeleteModel):
-    _safedelete_policy = SOFT_DELETE_CASCADE
-
+class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="cart_items")
     quantity = models.PositiveIntegerField(default=1)
@@ -112,9 +108,9 @@ class CartItem(SafeDeleteModel):
             models.UniqueConstraint(fields=["cart", "product"], name="unique_cart_product")
         ]
 
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name} in Cart"
+
     @property
     def subtotal(self):
         return self.product.price * self.quantity
-
-    def __str__(self):
-        return f"{self.quantity} x {self.product.name} in Cart"

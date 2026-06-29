@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
@@ -43,15 +44,20 @@ class UpdateCartView(View):
         cart_service = CartService(request)
         action = request.POST.get("action")
 
+        if action not in ["increase", "decrease", "remove"]:
+            from django.http import HttpResponseBadRequest
+
+            return HttpResponseBadRequest("Invalid or missing action")
+
         if action == "increase":
             current_qty = cart_service.get_product_quantity(product_id)
             new_qty = cart_service.update(product_id, current_qty + 1)
         elif action == "decrease":
             current_qty = cart_service.get_product_quantity(product_id)
             new_qty = cart_service.update(product_id, current_qty - 1)
-        else:
-            quantity = int(request.POST.get("quantity", 0))
-            new_qty = cart_service.update(product_id, quantity)
+        elif action == "remove":
+            cart_service.remove(product_id)
+            new_qty = 0
 
         total_items = cart_service.get_total_items()
         total_price = cart_service.get_total_price()
@@ -94,5 +100,10 @@ class RemoveFromCartView(View):
         return redirect("orders:cart")
 
 
-class CheckoutView(TemplateView):
+class CheckoutView(LoginRequiredMixin, TemplateView):
     template_name = "orders/checkout.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["profile"] = getattr(self.request.user, "profile", None)
+        return context

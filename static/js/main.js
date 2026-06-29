@@ -130,15 +130,13 @@ document.addEventListener("DOMContentLoaded", function () {
         formData.append("action", actionValue);
 
         try {
-          const response = await fetch(url, {
-            method: "POST",
+          const response = await axios.post(url, formData, {
             headers: {
               "X-Requested-With": "XMLHttpRequest",
               "X-CSRFToken": csrfToken
-            },
-            body: formData
+            }
           });
-          const data = await response.json();
+          const data = response.data;
           if (data.success) {
             updateView(data.product_quantity, data.cart_total_items);
           }
@@ -188,18 +186,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const cartTotalPriceElem = document.getElementById("cart-total-price");
 
     if (cartItemsList) {
-      cartItemsList.addEventListener("submit", async function (event) {
-        const form = event.target.closest("form");
-        if (!form) return;
+      cartItemsList.addEventListener("click", async function (event) {
+        const btn = event.target.closest("button[type='submit']");
+        if (!btn) return;
         event.preventDefault();
 
-        const cartItem = form.closest(".cart-item");
-        if (!cartItem) return;
+        const form = btn.closest("form");
+        const cartItem = btn.closest(".cart-item");
+        if (!form || !cartItem) return;
 
-        const submitter = event.submitter;
-        const action = submitter ? submitter.value : null;
-
-        const url = form.action;
+        const action = btn.value;
+        const url = form.getAttribute("action");
         const csrfToken = form.querySelector("[name=csrfmiddlewaretoken]").value;
 
         const formData = new FormData(form);
@@ -208,17 +205,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         try {
-          const response = await fetch(url, {
-            method: "POST",
+          const response = await axios.post(url, formData, {
             headers: {
               "X-Requested-With": "XMLHttpRequest",
               "X-CSRFToken": csrfToken
-            },
-            body: formData
+            }
           });
 
-          if (!response.ok) throw new Error("Network response was not ok");
-          const data = await response.json();
+          const data = response.data;
 
           if (data.success) {
             const quantityElem = cartItem.querySelector(".quantity-value-cart");
