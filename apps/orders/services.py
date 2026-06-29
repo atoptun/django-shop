@@ -1,9 +1,22 @@
+from decimal import Decimal
+from typing import Any
+
+from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
+from django.http import HttpRequest
+
 from apps.orders.models import Cart, CartItem
 from apps.products.models import Product
 
 
 class CartService:
-    def __init__(self, request, user=None):
+    request: HttpRequest
+    user: AbstractBaseUser | AnonymousUser | None
+    cart: Cart | None
+    session_cart: dict[str, int]
+
+    def __init__(
+        self, request: HttpRequest, user: AbstractBaseUser | AnonymousUser | None = None
+    ) -> None:
         self.request = request
         self.user = user or getattr(request, "user", None)
         if self.user and self.user.is_authenticated:
@@ -15,7 +28,7 @@ class CartService:
                 self.request.session["cart"] = {}
             self.session_cart = self.request.session["cart"]
 
-    def add(self, product_id, quantity=1):
+    def add(self, product_id: int, quantity: int = 1) -> int:
         product_id_str = str(product_id)
         try:
             product = Product.objects.get(id=product_id)
@@ -43,7 +56,7 @@ class CartService:
             self.request.session.modified = True
             return new_qty
 
-    def update(self, product_id, quantity):
+    def update(self, product_id: int, quantity: int) -> int:
         product_id_str = str(product_id)
         if quantity <= 0:
             if self.user and self.user.is_authenticated:
@@ -73,7 +86,7 @@ class CartService:
             self.request.session.modified = True
             return quantity
 
-    def remove(self, product_id):
+    def remove(self, product_id: int) -> None:
         product_id_str = str(product_id)
         if self.user and self.user.is_authenticated:
             CartItem.objects.filter(cart=self.cart, product_id=product_id).delete()
@@ -82,7 +95,7 @@ class CartService:
                 del self.session_cart[product_id_str]
                 self.request.session.modified = True
 
-    def get_product_quantity(self, product_id):
+    def get_product_quantity(self, product_id: int) -> int:
         product_id_str = str(product_id)
         if self.user and self.user.is_authenticated:
             try:
@@ -92,18 +105,18 @@ class CartService:
         else:
             return self.session_cart.get(product_id_str, 0)
 
-    def get_total_items(self):
+    def get_total_items(self) -> int:
         if self.user and self.user.is_authenticated:
             return sum(item.quantity for item in self.cart.items.all())  # type: ignore
         else:
             return sum(self.session_cart.values())
 
-    def get_items(self):
+    def get_items(self) -> list[dict[str, Any]]:
         """
         Returns a list of dicts:
         [{'product': product, 'quantity': quantity, 'subtotal': subtotal, 'total_price': subtotal}]
         """
-        items = []
+        items: list[dict[str, Any]] = []
         if self.user and self.user.is_authenticated:
             for item in self.cart.items.select_related("product").all():  # type: ignore
                 items.append(
@@ -116,8 +129,10 @@ class CartService:
                 )
         else:
             # Bulk fetch products in the session cart to avoid N+1 queries
-            product_ids = [int(pid) for pid in self.session_cart.keys()]
-            products = {p.pk: p for p in Product.objects.filter(id__in=product_ids)}
+            product_ids: list[int] = [int(pid) for pid in self.session_cart.keys()]
+            products: dict[int, Product] = {
+                p.pk: p for p in Product.objects.filter(id__in=product_ids)
+            }
             for pid_str, qty in self.session_cart.items():
                 pid = int(pid_str)
                 if pid in products:
@@ -132,16 +147,16 @@ class CartService:
                     )
         return items
 
-    def get_total_price(self):
+    def get_total_price(self) -> Decimal | float:
         return sum(item["subtotal"] for item in self.get_items())
 
-    def merge_session_cart(self):
+    def merge_session_cart(self) -> None:
         """
         Merges session cart into DB cart upon login.
         """
         if not self.user.is_authenticated:  # type: ignore
             return
-        session_cart = self.request.session.get("cart", {})
+        session_cart: dict[str, int] = self.request.session.get("cart", {})
         if not session_cart:
             return
         for pid_str, qty in session_cart.items():

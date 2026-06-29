@@ -1,5 +1,7 @@
+from typing import Any
+
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import TemplateView
@@ -12,7 +14,7 @@ from .services import CartService
 class CartView(TemplateView):
     template_name = "orders/cart.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         cart_service = CartService(self.request)
         context["cart_items"] = cart_service.get_items()
@@ -21,7 +23,9 @@ class CartView(TemplateView):
 
 
 class AddToCartView(View):
-    def post(self, request, product_id, *args, **kwargs):
+    def post(
+        self, request: HttpRequest, product_id: int, *args: Any, **kwargs: Any
+    ) -> HttpResponse:
         cart_service = CartService(request)
         quantity = int(request.POST.get("quantity", 1))
 
@@ -49,9 +53,11 @@ class AddToCartView(View):
 
 
 class UpdateCartView(View):
-    def post(self, request, product_id, *args, **kwargs):
+    def post(
+        self, request: HttpRequest, product_id: int, *args: Any, **kwargs: Any
+    ) -> HttpResponse:
         cart_service = CartService(request)
-        action = request.POST.get("action")
+        action = request.POST.get("action", "")
 
         if action not in ["increase", "decrease", "remove"]:
             from django.http import HttpResponseBadRequest
@@ -59,6 +65,7 @@ class UpdateCartView(View):
             return HttpResponseBadRequest("Invalid or missing action")
 
         try:
+            new_qty = 0
             if action == "increase":
                 current_qty = cart_service.get_product_quantity(product_id)
                 new_qty = cart_service.update(product_id, current_qty + 1)
@@ -99,7 +106,9 @@ class UpdateCartView(View):
 
 
 class RemoveFromCartView(View):
-    def post(self, request, product_id, *args, **kwargs):
+    def post(
+        self, request: HttpRequest, product_id: int, *args: Any, **kwargs: Any
+    ) -> HttpResponse:
         cart_service = CartService(request)
         cart_service.remove(product_id)
         total_items = cart_service.get_total_items()
@@ -120,7 +129,7 @@ class RemoveFromCartView(View):
 class CheckoutView(LoginRequiredMixin, TemplateView):
     template_name = "orders/checkout.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["profile"] = getattr(self.request.user, "profile", None)
         return context

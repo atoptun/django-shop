@@ -1,7 +1,11 @@
+from typing import Any
+
+from django.http import HttpRequest
+
 from .services import CartService
 
 
-def cart_count(request):
+def cart_count(request: HttpRequest) -> dict[str, Any]:
     """
     Context processor to add the total cart count to all template contexts.
     """
