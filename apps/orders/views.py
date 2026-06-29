@@ -25,7 +25,16 @@ class AddToCartView(View):
         cart_service = CartService(request)
         quantity = int(request.POST.get("quantity", 1))
 
-        new_qty = cart_service.add(product_id, quantity)
+        try:
+            new_qty = cart_service.add(product_id, quantity)
+        except ValueError as e:
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": str(e)}, status=400)
+            from django.contrib import messages
+
+            messages.error(request, str(e))
+            return redirect("orders:cart")
+
         total_items = cart_service.get_total_items()
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -49,15 +58,23 @@ class UpdateCartView(View):
 
             return HttpResponseBadRequest("Invalid or missing action")
 
-        if action == "increase":
-            current_qty = cart_service.get_product_quantity(product_id)
-            new_qty = cart_service.update(product_id, current_qty + 1)
-        elif action == "decrease":
-            current_qty = cart_service.get_product_quantity(product_id)
-            new_qty = cart_service.update(product_id, current_qty - 1)
-        elif action == "remove":
-            cart_service.remove(product_id)
-            new_qty = 0
+        try:
+            if action == "increase":
+                current_qty = cart_service.get_product_quantity(product_id)
+                new_qty = cart_service.update(product_id, current_qty + 1)
+            elif action == "decrease":
+                current_qty = cart_service.get_product_quantity(product_id)
+                new_qty = cart_service.update(product_id, current_qty - 1)
+            elif action == "remove":
+                cart_service.remove(product_id)
+                new_qty = 0
+        except ValueError as e:
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": str(e)}, status=400)
+            from django.contrib import messages
+
+            messages.error(request, str(e))
+            return redirect("orders:cart")
 
         total_items = cart_service.get_total_items()
         total_price = cart_service.get_total_price()

@@ -321,3 +321,50 @@ def test_login_triggers_cart_merge(client):
     # Check session cleared after login
     assert "cart" in client.session
     assert client.session["cart"] == {}
+
+
+# --- Stock Limit Tests ---
+
+
+def test_cart_service_stock_limit():
+    product = ProductFactory(stock=5)
+
+    # Guest cart stock check
+    request = get_mock_request(user=None)
+    service = CartService(request)
+
+    # Adding within stock passes
+    service.add(product.id, 4)
+    assert service.get_product_quantity(product.id) == 4
+
+    # Exceeding stock raises ValueError
+    with pytest.raises(ValueError) as excinfo:
+        service.add(product.id, 2)
+    assert "Only 5 items are available in stock." in str(excinfo.value)
+
+    # Updating within stock passes
+    service.update(product.id, 5)
+    assert service.get_product_quantity(product.id) == 5
+
+    # Updating exceeding stock raises ValueError
+    with pytest.raises(ValueError):
+        service.update(product.id, 6)
+
+
+def test_update_cart_view_stock_limit_ajax(client):
+    product = ProductFactory(stock=2)
+    url = reverse("orders:update_cart", kwargs={"product_id": product.id})
+
+    session = client.session
+    session["cart"] = {str(product.id): 2}
+    session.save()
+
+    response = client.post(
+        url,
+        {"action": "increase"},
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert "Only 2 items are available in stock." in data["error"]

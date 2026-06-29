@@ -17,6 +17,17 @@ class CartService:
 
     def add(self, product_id, quantity=1):
         product_id_str = str(product_id)
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist as e:
+            raise ValueError("Product does not exist") from e
+
+        current_qty = self.get_product_quantity(product_id)
+        new_qty = current_qty + quantity
+
+        if new_qty > product.stock:
+            raise ValueError(f"Only {product.stock} items are available in stock.")
+
         if self.user and self.user.is_authenticated:
             item, created = CartItem.objects.get_or_create(cart=self.cart, product_id=product_id)
             if not created:
@@ -34,25 +45,33 @@ class CartService:
 
     def update(self, product_id, quantity):
         product_id_str = str(product_id)
-        if self.user and self.user.is_authenticated:
-            if quantity <= 0:
+        if quantity <= 0:
+            if self.user and self.user.is_authenticated:
                 CartItem.objects.filter(cart=self.cart, product_id=product_id).delete()
                 return 0
             else:
-                item, _ = CartItem.objects.get_or_create(cart=self.cart, product_id=product_id)
-                item.quantity = quantity
-                item.save()
-                return item.quantity
-        else:
-            if quantity <= 0:
                 if product_id_str in self.session_cart:
                     del self.session_cart[product_id_str]
                 self.request.session.modified = True
                 return 0
-            else:
-                self.session_cart[product_id_str] = quantity
-                self.request.session.modified = True
-                return quantity
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist as e:
+            raise ValueError("Product does not exist") from e
+
+        if quantity > product.stock:
+            raise ValueError(f"Only {product.stock} items are available in stock.")
+
+        if self.user and self.user.is_authenticated:
+            item, _ = CartItem.objects.get_or_create(cart=self.cart, product_id=product_id)
+            item.quantity = quantity
+            item.save()
+            return item.quantity
+        else:
+            self.session_cart[product_id_str] = quantity
+            self.request.session.modified = True
+            return quantity
 
     def remove(self, product_id):
         product_id_str = str(product_id)
@@ -75,7 +94,7 @@ class CartService:
 
     def get_total_items(self):
         if self.user and self.user.is_authenticated:
-            return sum(item.quantity for item in self.cart.items.all())
+            return sum(item.quantity for item in self.cart.items.all())  # type: ignore
         else:
             return sum(self.session_cart.values())
 
@@ -86,7 +105,7 @@ class CartService:
         """
         items = []
         if self.user and self.user.is_authenticated:
-            for item in self.cart.items.select_related("product").all():
+            for item in self.cart.items.select_related("product").all():  # type: ignore
                 items.append(
                     {
                         "product": item.product,
@@ -120,19 +139,28 @@ class CartService:
         """
         Merges session cart into DB cart upon login.
         """
-        if not self.user.is_authenticated:
+        if not self.user.is_authenticated:  # type: ignore
             return
         session_cart = self.request.session.get("cart", {})
         if not session_cart:
             return
         for pid_str, qty in session_cart.items():
             pid = int(pid_str)
+            try:
+                product = Product.objects.get(id=pid)
+            except Product.DoesNotExist:
+                continue
+
             item, created = CartItem.objects.get_or_create(cart=self.cart, product_id=pid)
             if created:
-                item.quantity = qty
+                item.quantity = min(qty, product.stock)
             else:
-                item.quantity += qty
-            item.save()
+                item.quantity = min(item.quantity + qty, product.stock)
+
+            if item.quantity <= 0:
+                item.delete()
+            else:
+                item.save()
         # Clear session cart after merging
         self.request.session["cart"] = {}
         self.request.session.modified = True

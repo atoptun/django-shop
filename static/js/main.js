@@ -17,6 +17,25 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  function showAlertMessage(messageText, tags = "error") {
+    const container = document.getElementById("messages-container");
+    if (!container) return;
+
+    const alertDiv = document.createElement("div");
+    alertDiv.className = `alert alert-${tags}`;
+    alertDiv.textContent = messageText;
+
+    container.appendChild(alertDiv);
+
+    setTimeout(() => {
+      alertDiv.style.transition = "transform 0.4s ease, opacity 0.4s ease";
+      alertDiv.style.opacity = "0";
+      alertDiv.style.transform = "translateX(50px)";
+
+      setTimeout(() => alertDiv.remove(), 400);
+    }, 4000);
+  }
+
   // Filter Logic (Keywords and Checkboxes)
   const form = document.getElementById("js-filter-form");
   const sortInput = document.getElementById("js-sort-input");
@@ -123,7 +142,9 @@ document.addEventListener("DOMContentLoaded", function () {
       const quantityValueSpan =
         quantityCounter.querySelector(".quantity-value");
 
-      const csrfToken = cartControls.querySelector("[name=csrfmiddlewaretoken]").value;
+      const csrfToken = cartControls.querySelector(
+        "[name=csrfmiddlewaretoken]",
+      ).value;
 
       async function sendCartUpdate(url, actionValue) {
         const formData = new FormData();
@@ -133,15 +154,20 @@ document.addEventListener("DOMContentLoaded", function () {
           const response = await axios.post(url, formData, {
             headers: {
               "X-Requested-With": "XMLHttpRequest",
-              "X-CSRFToken": csrfToken
-            }
+              "X-CSRFToken": csrfToken,
+            },
           });
           const data = response.data;
           if (data.success) {
             updateView(data.product_quantity, data.cart_total_items);
           }
         } catch (error) {
-          console.error("Cart update error:", error);
+          // if (error.response && error.response.data && error.response.data.error) {
+          if (error?.response?.data?.error) {
+            showAlertMessage(error.response.data.error, "error");
+          } else {
+            console.error("Cart update error:", error);
+          }
         }
       }
 
@@ -197,7 +223,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const action = btn.value;
         const url = form.getAttribute("action");
-        const csrfToken = form.querySelector("[name=csrfmiddlewaretoken]").value;
+        const csrfToken = form.querySelector(
+          "[name=csrfmiddlewaretoken]",
+        ).value;
 
         const formData = new FormData(form);
         if (action) {
@@ -208,15 +236,17 @@ document.addEventListener("DOMContentLoaded", function () {
           const response = await axios.post(url, formData, {
             headers: {
               "X-Requested-With": "XMLHttpRequest",
-              "X-CSRFToken": csrfToken
-            }
+              "X-CSRFToken": csrfToken,
+            },
           });
 
           const data = response.data;
 
           if (data.success) {
             const quantityElem = cartItem.querySelector(".quantity-value-cart");
-            const itemTotalElem = cartItem.querySelector("[data-item-total-price]");
+            const itemTotalElem = cartItem.querySelector(
+              "[data-item-total-price]",
+            );
 
             if (data.product_quantity <= 0) {
               cartItem.remove();
@@ -224,18 +254,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 location.reload();
               }
             } else {
-              if (quantityElem) quantityElem.textContent = data.product_quantity;
+              if (quantityElem)
+                quantityElem.textContent = data.product_quantity;
               if (itemTotalElem) itemTotalElem.textContent = data.item_subtotal;
             }
 
-            if (cartTotalPriceElem) cartTotalPriceElem.textContent = data.cart_total_price;
+            if (cartTotalPriceElem)
+              cartTotalPriceElem.textContent = data.cart_total_price;
 
             const headerCartBadge = document.querySelector(".js-cart-count");
-            if (headerCartBadge) headerCartBadge.textContent = data.cart_total_items;
+            if (headerCartBadge)
+              headerCartBadge.textContent = data.cart_total_items;
           }
         } catch (error) {
-          console.error("Error updating cart:", error);
-          form.submit();
+          // if (error.response && error.response.data && error.response.data.error) {
+          if (error?.response?.data?.error) {
+            showAlertMessage(error.response.data.error, "error");
+          } else {
+            console.error("Error updating cart:", error);
+            form.submit();
+          }
         }
       });
     }
