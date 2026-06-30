@@ -20,14 +20,44 @@
             </div>
           {% endif %}
           <div class="checkout-form-group">
+            <label for="address-choice">Select a Saved Address</label>
+            <select id="address-choice" name="address_choice" class="Input">
+              {% for val, label in form.fields.address_choice.choices %}
+                <option value="{{ val }}"
+                        {% if form.address_choice.value == val %}
+                          selected
+                        {% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            {% if form.address_choice.errors %}<span class="field-error">{{ form.address_choice.errors.0 }}</span>{% endif %}
+          </div>
+          <div style="margin-bottom: 1.5rem;">
+            <a href="{% url 'accounts:address_add' %}"
+               class="link"
+               style="color: var(--primary-color);
+                      text-decoration: underline"
+               target="_blank">
+              <i class="fa-solid fa-plus"></i> Add new address to your profile
+            </a>
+          </div>
+          <!-- Hidden elements with address data for JavaScript to read -->
+          <div id="saved-addresses-data" style="display: none;">
+            {% for addr in user.addresses.all %}
+              <div id="addr-data-{{ addr.id }}"
+                   data-recipient="{{ addr.recipient_name }}"
+                   data-phone="{{ addr.phone }}"
+                   data-city="{{ addr.city }}"
+                   data-address-line="{{ addr.address_line }}"></div>
+            {% endfor %}
+          </div>
+          <div class="checkout-form-group">
             <label for="full-name">Full Name</label>
             <input type="text"
                    id="full-name"
                    name="full_name"
                    class="Input"
                    placeholder="John Doe"
-                   value="{{ form.full_name.value|default:user.get_full_name|default:'' }}"
-                   required>
+                   value="{{ form.full_name.value|default:'' }}">
             {% if form.full_name.errors %}<span class="field-error">{{ form.full_name.errors.0 }}</span>{% endif %}
           </div>
           <div class="checkout-form-group">
@@ -37,8 +67,7 @@
                    name="phone"
                    class="Input"
                    placeholder="+380991234567"
-                   value="{{ form.phone.value|default:profile.phone|default:'' }}"
-                   required>
+                   value="{{ form.phone.value|default:'' }}">
             {% if form.phone.errors %}<span class="field-error">{{ form.phone.errors.0 }}</span>{% endif %}
           </div>
           <div class="checkout-form-group">
@@ -48,8 +77,7 @@
                    name="city"
                    class="Input"
                    placeholder="Kyiv"
-                   value="{{ form.city.value|default:profile.city|default:'' }}"
-                   required>
+                   value="{{ form.city.value|default:'' }}">
             {% if form.city.errors %}<span class="field-error">{{ form.city.errors.0 }}</span>{% endif %}
           </div>
           <div class="checkout-form-group">
@@ -58,41 +86,27 @@
                       name="address"
                       class="Textarea"
                       placeholder="Street name, building/apartment number"
-                      rows="3"
-                      required>{{ form.address.value|default:profile.address|default:'' }}</textarea>
+                      rows="3">{{ form.address.value|default:'' }}</textarea>
             {% if form.address.errors %}<span class="field-error">{{ form.address.errors.0 }}</span>{% endif %}
           </div>
         </section>
         <!-- Payment Method -->
         <section class="checkout-section">
           <h2 class="checkout-section__title">Payment Method</h2>
-          <div class="payment-options">
-            <label class="radio-option">
-              <input type="radio"
-                     name="payment_method"
-                     value="debit"
-                     {% if form.payment_method.value == 'debit' or not form.payment_method.value %}checked{% endif %}>
-              <span class="radio-custom"></span>
-              <span class="radio-label">Debit Card</span>
-            </label>
-            <label class="radio-option">
-              <input type="radio"
-                     name="payment_method"
-                     value="wallet"
-                     {% if form.payment_method.value == 'wallet' %}checked{% endif %}>
-              <span class="radio-custom"></span>
-              <span class="radio-label">Digital Wallet</span>
-            </label>
-            <label class="radio-option">
-              <input type="radio"
-                     name="payment_method"
-                     value="cod"
-                     {% if form.payment_method.value == 'cod' %}checked{% endif %}>
-              <span class="radio-custom"></span>
-              <span class="radio-label">Cash On Delivery</span>
-            </label>
+          <div class="checkout-form-group">
+            <label for="payment-method">Select Payment Method</label>
+            <select id="payment-method" name="payment_method" class="Input" required>
+              {% for val, label in form.fields.payment_method.choices %}
+                {% if val %}
+                  <option value="{{ val }}"
+                          {% if form.payment_method.value|stringformat:"s" == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                {% else %}
+                  <option value="">{{ label }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+            {% if form.payment_method.errors %}<span class="field-error">{{ form.payment_method.errors.0 }}</span>{% endif %}
           </div>
-          {% if form.payment_method.errors %}<span class="field-error">{{ form.payment_method.errors.0 }}</span>{% endif %}
         </section>
         <!-- Order Summary -->
         <section class="checkout-summary">
@@ -102,10 +116,44 @@
               <p>Total</p>
               <p>${{ cart_total }}</p>
             </div>
-            <button type="submit" class="button button--primary button--pay">Pay</button>
+            <button type="submit" class="button button--primary button--pay">Place Order</button>
           </div>
         </section>
       </form>
     </div>
   </main>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const addressChoiceSelect = document.getElementById("address-choice");
+      const fullNameInput = document.getElementById("full-name");
+      const phoneInput = document.getElementById("phone");
+      const cityInput = document.getElementById("city");
+      const addressInput = document.getElementById("address");
+
+      if (addressChoiceSelect) {
+        addressChoiceSelect.addEventListener("change", function() {
+          const val = this.value;
+          if (val && val !== "new") {
+            const dataEl = document.getElementById(`addr-data-${val}`);
+            if (dataEl) {
+              fullNameInput.value = dataEl.dataset.recipient || "";
+              phoneInput.value = dataEl.dataset.phone || "";
+              cityInput.value = dataEl.dataset.city || "";
+              addressInput.value = dataEl.dataset.addressLine || "";
+            }
+          } else {
+            fullNameInput.value = "";
+            phoneInput.value = "";
+            cityInput.value = "";
+            addressInput.value = "";
+          }
+        });
+
+        // Trigger initial prefill if a default/preselected option is set
+        if (addressChoiceSelect.value && addressChoiceSelect.value !== "new") {
+          addressChoiceSelect.dispatchEvent(new Event("change"));
+        }
+      }
+    });
+  </script>
 {% endblock %}

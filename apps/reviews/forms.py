@@ -9,8 +9,20 @@ class ReviewForm(forms.ModelForm):
         fields = ["rating", "comment"]
         widgets = {
             "rating": forms.Select(
-                choices=[(i, f"{i} star{'s' if i > 1 else ''}") for i in range(1, 6)],
-                attrs={"class": "form-select"},
+                choices=[
+                    ("5", "5 ★★★★★"),
+                    ("4", "4 ★★★★☆"),
+                    ("3", "3 ★★★☆☆"),
+                    ("2", "2 ★★☆☆☆"),
+                    ("1", "1 ★☆☆☆☆"),
+                ],
+                attrs={"class": "Select"},
             ),
-            "comment": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+            "comment": forms.Textarea(
+                attrs={
+                    "class": "Textarea",
+                    "rows": 4,
+                    "placeholder": "Write your review here...",
+                }
+            ),
         }

@@ -2,7 +2,7 @@ from typing import Any
 
 from django.conf import settings
 from django.db import models
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
@@ -29,16 +29,35 @@ class Order(SafeDeleteModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    items: models.QuerySet["OrderItem"]
+    payment: "Payment"
+
     class Meta:
         ordering = ["-created_at"]
 
-    @property
     def get_absolute_url(self) -> str:
-        # TODO: Implement a proper URL for order detail view
-        return reverse("orders:order_detail", kwargs={"pk": self.pk})
+        try:
+            return reverse("orders:order_detail", kwargs={"pk": self.pk})
+        except NoReverseMatch:
+            return reverse("accounts:order_history")
 
     def __str__(self) -> str:
         return f"Order #{self.pk} by {self.user.username if self.user else 'Unknown'}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            original = Order.objects.get(pk=self.pk)
+            if original.status != self.Status.CANCELLED and self.status == self.Status.CANCELLED:
+                from django.db import transaction
+                from django.db.models import F
+
+                with transaction.atomic():
+                    for item in self.items.all():
+                        if item.product:
+                            Product.objects.filter(id=item.product.id).update(
+                                stock=F("stock") + item.quantity
+                            )
+        super().save(*args, **kwargs)
 
 
 class OrderItem(SafeDeleteModel):
@@ -68,22 +87,29 @@ class OrderItem(SafeDeleteModel):
         return f"{self.quantity} x {self.product.name if self.product else 'Unknown Product'}"
 
 
+class PaymentMethod(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Payment(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
 
-    class Method(models.TextChoices):
-        CREDIT_CARD = "credit_card", "Credit Card"
-        PAYPAL = "paypal", "PayPal"
-
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="payment")
-    method = models.CharField(max_length=20, choices=Method.choices)
+    payment_method = models.ForeignKey(
+        PaymentMethod, on_delete=models.PROTECT, related_name="payments", null=True
+    )
     transaction_id = models.CharField(max_length=100, unique=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return f"Payment for Order #{self.order.pk} via {self.method}"
+        return f"Payment for Order #{self.order.pk} via {self.payment_method.name}"
 
 
 class Cart(models.Model):
@@ -92,6 +118,8 @@ class Cart(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    items: models.QuerySet["CartItem"]
 
     def __str__(self) -> str:
         return f"Cart of {self.user.username}"

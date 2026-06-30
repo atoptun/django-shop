@@ -110,48 +110,27 @@
       </section>
       <!-- Latest Reviews Section -->
       <section class="reviews-section">
-        <h2 class="reviews-title">Latest reviews</h2>
-        {% if can_review %}
-          <div class="add-review-container"
-               style="margin-bottom: 2rem;
-                      padding: 1.5rem;
-                      border: 1px solid var(--border-color, #e0e0e0);
-                      border-radius: 8px">
-            <h3 style="margin-bottom: 1rem;">Write a Review</h3>
-            <form method="post" action="{% url 'add_review' product.id %}">
+        {% if can_review and not already_reviewed %}
+          <div class="add-review-container">
+            <h3 class="add-review-title">Write a Review</h3>
+            <form method="post"
+                  action="{% url 'reviews:add_review' product.slug %}"
+                  class="add-review-form">
               {% csrf_token %}
-              <div class="checkout-form-group" style="margin-bottom: 1rem;">
-                <label for="review-rating" style="display: block; margin-bottom: 0.5rem;">Rating</label>
-                <select id="review-rating"
-                        name="rating"
-                        class="Input"
-                        style="width: 100%;
-                               max-width: 150px;
-                               background: transparent;
-                               color: inherit;
-                               padding: 8px"
-                        required>
-                  <option value="5">5 ★★★★★</option>
-                  <option value="4">4 ★★★★☆</option>
-                  <option value="3">3 ★★★☆☆</option>
-                  <option value="2">2 ★★☆☆☆</option>
-                  <option value="1">1 ★☆☆☆☆</option>
-                </select>
-              </div>
-              <div class="checkout-form-group" style="margin-bottom: 1rem;">
-                <label for="review-comment" style="display: block; margin-bottom: 0.5rem;">Comment</label>
-                <textarea id="review-comment"
-                          name="comment"
-                          class="Textarea"
-                          placeholder="Write your review here..."
-                          rows="4"
-                          style="width: 100%"
-                          required></textarea>
-              </div>
-              <button type="submit" class="button button--primary">Submit Review</button>
+              {{ review_form.as_div }}
+              <button type="submit" class="button button--primary add-review-btn">Submit Review</button>
             </form>
           </div>
+        {% elif not user.is_authenticated %}
+          <p>
+            <a href="{% url 'login' %}">Log in</a> to write a review.
+          </p>
+        {% elif already_reviewed %}
+          <p>You have already reviewed this product.</p>
+        {% else %}
+          <p>Only users who purchased this product can leave a review.</p>
         {% endif %}
+        <h2 class="reviews-title">Latest reviews</h2>
         <div class="reviews-grid">
           {% for review in reviews %}
             <div class="review-card">
@@ -171,15 +150,14 @@
               <div class="review-author">
                 <img src="{% static 'img/avatars/avatar1.svg' %}"
                      alt="User avatar"
-                     class="author-avatar">
+                     class="author-avatar"
+                     width="40"
+                     height="40">
                 <span class="author-name">{{ review.user.username }}</span>
               </div>
             </div>
           {% empty %}
-            <p>
-              No reviews yet.
-              {% if user.is_authenticated and not can_review %}Only users who purchased this product can leave a review.{% endif %}
-            </p>
+            <p>No reviews yet.</p>
           {% endfor %}
         </div>
       </section>
