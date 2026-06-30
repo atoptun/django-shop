@@ -1,4 +1,5 @@
-from typing import Any
+from decimal import Decimal
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.db import models
@@ -29,8 +30,9 @@ class Order(SafeDeleteModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    items: models.QuerySet["OrderItem"]
-    payment: "Payment"
+    if TYPE_CHECKING:
+        items: models.Manager["OrderItem"]
+        payment: "Payment"
 
     class Meta:
         ordering = ["-created_at"]
@@ -80,7 +82,7 @@ class OrderItem(SafeDeleteModel):
         ]
 
     @property
-    def subtotal(self) -> Any:
+    def subtotal(self) -> Decimal:
         return self.price * self.quantity
 
     def __str__(self) -> str:
@@ -119,7 +121,8 @@ class Cart(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    items: models.QuerySet["CartItem"]
+    if TYPE_CHECKING:
+        items: models.Manager["CartItem"]
 
     def __str__(self) -> str:
         return f"Cart of {self.user.username}"
