@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -51,6 +53,11 @@ class Product(SafeDeleteModel):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    if TYPE_CHECKING:
+        from apps.reviews.models import Review
+
+        reviews: models.Manager["Review"]
 
     class Meta:
         ordering = ["name"]

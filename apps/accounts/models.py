@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.signals import post_save
@@ -6,16 +8,19 @@ from phonenumber_field.modelfields import PhoneNumberField
 from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
-from apps.orders.models import Order
-from apps.reviews.models import Review
+if TYPE_CHECKING:
+    from apps.orders.models import Order
+    from apps.reviews.models import Review
 
 
 class User(AbstractUser, SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
     profile: "Profile"
-    addresses: models.QuerySet["Address"]
-    orders: models.QuerySet["Order"]
-    reviews: models.QuerySet["Review"]
+
+    if TYPE_CHECKING:
+        addresses: models.Manager["Address"]
+        orders: models.Manager["Order"]
+        reviews: models.Manager["Review"]
 
     class Meta:
         db_table = "auth_user"
