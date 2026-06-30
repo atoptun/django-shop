@@ -72,8 +72,28 @@ class ProductDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        product = self.object
+
         from apps.orders.services import CartService
+        from apps.reviews.services import ReviewService
 
         cart_service = CartService(self.request)
         context["in_cart_quantity"] = cart_service.get_product_quantity(self.object.id)
+
+        review_service = ReviewService(self.request)
+        context["reviews"] = review_service.get_reviews_for_product(product)
+        can_review = review_service.can_user_review_product(product)
+        already_reviewed = review_service.user_already_reviewed_product(product)
+        review_form = None
+
+        if can_review and not already_reviewed:
+            from apps.reviews.forms import ReviewForm
+
+            review_form = ReviewForm()
+            context["review_form"] = review_form
+
+        context["can_review"] = can_review
+        context["already_reviewed"] = already_reviewed
+        context["review_form"] = review_form
+
         return context

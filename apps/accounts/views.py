@@ -48,7 +48,12 @@ class OrderHistoryView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         request = cast(AuthenticatedRequest, self.request)
-        return request.user.orders.all().order_by("-created_at")
+        return (
+            request.user.orders.all()
+            .select_related("payment__payment_method")
+            .prefetch_related("items__product")
+            .order_by("-updated_at")
+        )
 
 
 class AddressListView(LoginRequiredMixin, ListView):

@@ -10,46 +10,92 @@
       <div class="order-table-cell">Order Details</div>
       <div class="order-table-cell">Order Status</div>
       <div class="order-table-cell">Total</div>
+      <div class="order-table-cell">Actions</div>
     </div>
     <!-- Table Body -->
     <div class="order-table-body">
       {% for order in orders %}
-        <div class="order-table-row">
-          <div class="order-table-cell">
-            <span class="order-id">#{{ order.id }}</span>
-            <span class="order-date">{{ order.created_at|date:"j M Y" }}</span>
+        <div class="order-row-container">
+          <div class="order-table-row">
+            <div class="order-table-cell">
+              <span class="order-id">#{{ order.id }}</span>
+              <span class="order-date">{{ order.created_at|date:"j M Y" }}</span>
+            </div>
+            <div class="order-table-cell">
+              <span class="order-status status-{{ order.status }}">{{ order.status|title }}</span>
+            </div>
+            <div class="order-table-cell">
+              <span class="order-total">${{ order.total_price }}</span>
+            </div>
+            <div class="order-table-cell">
+              <button class="button button--secondary button--small js-toggle-order-info"
+                      data-order-id="{{ order.id }}">More info</button>
+            </div>
           </div>
-          <div class="order-table-cell">
-            <span class="order-status status-{{ order.status }}">{{ order.status|title }}</span>
-          </div>
-          <div class="order-table-cell">
-            <span class="order-total">${{ order.total_price }}</span>
+          <!-- Accordion Panel (hidden by default) -->
+          <div class="order-extra-info" id="order-info-{{ order.id }}">
+            <div class="order-extra-info__content">
+              <div class="order-info-grid">
+                <div class="order-info-section">
+                  <h4>Shipping Address</h4>
+                  <p>{{ order.shipping_address }}</p>
+                </div>
+                <div class="order-info-section">
+                  <h4>Payment Information</h4>
+                  {% if order.payment %}
+                    <p>
+                      <strong>Method:</strong> {{ order.payment.payment_method.name }}
+                      <br>
+                      <strong>Transaction ID:</strong> <span class="font-mono">{{ order.payment.transaction_id }}</span>
+                    </p>
+                  {% else %}
+                    <p class="error">No payment details recorded.</p>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="order-info-section">
+                <h4>Items Ordered</h4>
+                <div class="order-items-list">
+                  {% for item in order.items.all %}
+                    <div class="order-item-row">
+                      <span class="order-item-row__name">
+                        <a href="{{ item.product.get_absolute_url }}"
+                           class="order-item-row__link">{{ item.product.name }}</a>
+                        <span class="order-item-row__qty">x{{ item.quantity }}</span>
+                      </span>
+                      <span>${{ item.price }} each (Subtotal: ${{ item.subtotal }})</span>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       {% empty %}
-        <div class="no-orders"
-             style="padding: 2rem;
-                    text-align: center;
-                    opacity: 0.7">
+        <div class="no-orders">
           <p>You have not placed any orders yet.</p>
         </div>
       {% endfor %}
     </div>
   </div>
-  {% if is_paginated %}
-    <div class="account-pagination">
-      {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}"
-           class="pagination-link-account">← Previous</a>
-      {% else %}
-        <span class="pagination-link-account disabled">← Previous</span>
-      {% endif %}
-      {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}"
-           class="pagination-link-account">Next →</a>
-      {% else %}
-        <span class="pagination-link-account disabled">Next →</span>
-      {% endif %}
-    </div>
-  {% endif %}
+  {% include "snippets/pagination.html" %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const toggleButtons = document.querySelectorAll(".js-toggle-order-info");
+      toggleButtons.forEach(button => {
+        button.addEventListener("click", function() {
+          const orderId = this.getAttribute("data-order-id");
+          const panel = document.getElementById(`order-info-${orderId}`);
+          if (panel) {
+            panel.classList.toggle("active");
+            if (panel.classList.contains("active")) {
+              this.textContent = "Less info";
+            } else {
+              this.textContent = "More info";
+            }
+          }
+        });
+      });
+    });
+  </script>
 {% endblock tab_content %}
