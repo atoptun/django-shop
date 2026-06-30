@@ -28,10 +28,15 @@ class AddReviewView(LoginRequiredMixin, CreateView):
 
         form = ReviewForm(request.POST)
         if form.is_valid():
+            from apps.products.services import ProductService
+
+            product_service = ProductService(request)
+
             review = form.save(commit=False)
             review.user = request.user
             review.product = product
             review.save()
+            product_service.update_product_rating(product)
             messages.success(request, "Review added!")
 
         return redirect(product.get_absolute_url())
