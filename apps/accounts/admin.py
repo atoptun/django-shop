@@ -178,7 +178,7 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
             },
         ),
         (
-            ("Important dates"),
+            ("Dates"),
             {"classes": ["collapse"], "fields": ("last_login", "date_joined", "deleted")},
         ),
     )
