@@ -3,12 +3,14 @@ from typing import Any
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
+from django.db.models import Count
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import TabularInline
-from unfold.contrib.filters.admin import ChoicesDropdownFilter
 
 from apps.accounts.models import Address, Profile, User
 from apps.common.admin import BaseSafeDeleteUnfoldAdmin
+from apps.orders.models import Order
+from apps.reviews.models import Review
 
 
 class AddressInline(TabularInline):
@@ -39,6 +41,28 @@ class ProfileInline(TabularInline):
     # readonly_fields = ["created_at", "updated_at", "deleted"]
 
 
+class OrderInline(TabularInline):
+    model = Order
+    extra = 0
+    tab = True
+    show_change_link = True
+    can_add = False
+    can_delete = False
+    fields = ["id", "status", "total_price", "created_at"]
+    readonly_fields = ["id", "status", "total_price", "created_at"]
+
+
+class ReviewInline(TabularInline):
+    model = Review
+    extra = 0
+    tab = True
+    show_change_link = True
+    can_add = False
+    can_delete = False
+    fields = ["product", "rating", "comment", "created_at"]
+    readonly_fields = ["product", "rating", "comment", "created_at"]
+
+
 class UserCreationForm(BaseUserCreationForm):
     class Meta(BaseUserCreationForm.Meta):
         model = User
@@ -57,17 +81,65 @@ class UserCreationForm(BaseUserCreationForm):
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin, BaseSafeDeleteUnfoldAdmin):
+class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
     list_display = [
         # "username",
         "email",
         "first_name",
         "last_name",
+        "orders_count_display",
+        "reviews_count_display",
         "is_staff",
         "is_active",
-        "deleted",
     ]
-    list_filter = ["is_staff", "is_superuser", ("is_active", ChoicesDropdownFilter)]
+
+    def get_list_display(self, request):
+        list_display = super().get_list_display(request)
+
+        if not request.user.is_superuser:  # type: ignore
+            list_display = [
+                field for field in list_display if field not in ["is_staff", "is_superuser"]
+            ]
+
+        return list_display
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            _orders_count=Count("orders", distinct=True),
+            _reviews_count=Count("reviews", distinct=True),
+        )
+
+    @admin.display(description="Orders", ordering="_orders_count")
+    def orders_count_display(self, obj):
+        return getattr(obj, "_orders_count", 0)
+
+    @admin.display(description="Reviews", ordering="_reviews_count")
+    def reviews_count_display(self, obj):
+        return getattr(obj, "_reviews_count", 0)
+
+    actions = ["mark_as_active", "mark_as_inactive"]
+
+    @admin.action(description="Mark selected users as Active")
+    def mark_as_active(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} users successfully marked as Active.")
+
+    @admin.action(description="Mark selected users as Inactive")
+    def mark_as_inactive(self, request, queryset):
+        updated = queryset.exclude(is_superuser=True).exclude(is_staff=True).update(is_active=False)
+        self.message_user(request, f"{updated} users successfully marked as Inactive.")
+
+    list_filter = ["is_staff", "is_superuser", "is_active"]
+
+    def get_list_filter(self, request):
+        list_filter = super().get_list_filter(request)
+
+        if not request.user.is_superuser:  # type: ignore
+            list_filter = [f for f in list_filter if f not in ["is_staff", "is_superuser"]]
+
+        return list_filter
+
     search_fields = ["first_name", "last_name", "email"]
     ordering = ["-date_joined"]
     add_form = UserCreationForm
@@ -82,7 +154,7 @@ class UserAdmin(BaseUserAdmin, BaseSafeDeleteUnfoldAdmin):
         ),
     )
 
-    inlines = [ProfileInline, AddressInline]
+    inlines = [ProfileInline, AddressInline, OrderInline, ReviewInline]
 
     def instance_info_cards(self, instance):
         if not instance.pk:
@@ -122,47 +194,41 @@ class UserAdmin(BaseUserAdmin, BaseSafeDeleteUnfoldAdmin):
                 ),
             },
         ),
-        (("Important dates"), {"fields": ("last_login", "date_joined", "deleted")}),
+        (
+            ("Important dates"),
+            {"classes": ["collapse"], "fields": ("last_login", "date_joined", "deleted")},
+        ),
     )
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+
+        if not request.user.is_superuser:  # type: ignore
+            fieldsets = [fs for fs in fieldsets if fs[0] != "Permissions"]
+            # Hide password field for non-superusers
+            new_fieldsets = []
+            for title, fields_dict in fieldsets:
+                if "fields" in fields_dict:
+                    new_fields = [f for f in fields_dict["fields"] if f != "password"]
+                    new_fieldsets.append((title, {**fields_dict, "fields": tuple(new_fields)}))
+                else:
+                    new_fieldsets.append((title, fields_dict))
+            fieldsets = new_fieldsets
+
+        return fieldsets
 
     readonly_fields = ["last_login", "date_joined", "deleted"]
 
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = super().get_readonly_fields(request, obj)
 
-# @admin.register(Profile)
-# class ProfileAdmin(BaseSafeDeleteUnfoldAdmin):
-#     list_display = ["user", "phone", "city", "created_at", "deleted"]
-#     search_fields = ["user__username", "user__email", "phone", "city"]
-#     list_filter = ["city"]
+        if not request.user.is_superuser:  # type: ignore
+            readonly_fields = list(readonly_fields) + [
+                "is_active",
+                "is_staff",
+                "is_superuser",
+                "groups",
+                "user_permissions",
+            ]
 
-#     # inlines = [AddressInline]
-#     readonly_fields = ["created_at", "updated_at", "deleted"]
-
-#     fields = [
-#         "user",
-#         "phone",
-#         "city",
-#         "address",
-#         (
-#             "created_at",
-#             "updated_at",
-#             "deleted",
-#         ),
-#     ]
-
-
-# @admin.register(Address)
-# class AddressAdmin(BaseSafeDeleteUnfoldAdmin):
-#     list_display = ["recipient_name", "user", "city", "is_default", "deleted"]
-#     search_fields = ["recipient_name", "city", "user__username"]
-#     list_filter = ["city", "is_default"]
-
-#     fields = [
-#         "user",
-#         "recipient_name",
-#         "phone",
-#         "city",
-#         "address_line",
-#         "is_default",
-#         "deleted",
-#     ]
-#     readonly_fields = ["deleted"]
+        return readonly_fields
