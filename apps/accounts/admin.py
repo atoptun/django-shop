@@ -4,7 +4,6 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from django.db.models import Count
-from django.utils.translation import gettext_lazy as _
 from unfold.admin import TabularInline
 
 from apps.accounts.models import Address, Profile, User
@@ -103,6 +102,7 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
 
         return list_display
 
+    # Show counts of related objects in the list display
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.annotate(
@@ -118,6 +118,7 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
     def reviews_count_display(self, obj):
         return getattr(obj, "_reviews_count", 0)
 
+    # Custom actions to mark users as active or inactive
     actions = ["mark_as_active", "mark_as_inactive"]
 
     @admin.action(description="Mark selected users as Active")
@@ -130,6 +131,7 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
         updated = queryset.exclude(is_superuser=True).exclude(is_staff=True).update(is_active=False)
         self.message_user(request, f"{updated} users successfully marked as Inactive.")
 
+    # Filtering and searching
     list_filter = ["is_staff", "is_superuser", "is_active"]
 
     def get_list_filter(self, request):
@@ -142,8 +144,9 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
 
     search_fields = ["first_name", "last_name", "email"]
     ordering = ["-date_joined"]
-    add_form = UserCreationForm
 
+    # Customizing the add form to use email instead of username
+    add_form = UserCreationForm
     add_fieldsets = (
         (
             None,
@@ -154,30 +157,10 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
         ),
     )
 
+    # Inlines for related models
     inlines = [ProfileInline, AddressInline, OrderInline, ReviewInline]
 
-    def instance_info_cards(self, instance):
-        if not instance.pk:
-            return []
-
-        return [
-            {
-                "title": ("Orders Count"),
-                "value": instance.orders.count() if hasattr(instance, "orders") else 0,
-                "description": _("Total orders placed by this user"),
-            },
-            {
-                "title": ("Reviews Left"),
-                "value": instance.reviews.count() if hasattr(instance, "reviews") else 0,
-                "description": _("Product reviews submitted"),
-            },
-            {
-                "title": ("Account Status"),
-                "value": "Active" if instance.is_active else "Banned/Inactive",
-                "color": "green" if instance.is_active else "red",
-            },
-        ]
-
+    # Customizing the fieldsets based on user permissions
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         (("Personal info"), {"fields": ("first_name", "last_name")}),
@@ -217,6 +200,7 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
 
         return fieldsets
 
+    # Customizing readonly fields based on user permissions
     readonly_fields = ["last_login", "date_joined", "deleted"]
 
     def get_readonly_fields(self, request, obj=None):
