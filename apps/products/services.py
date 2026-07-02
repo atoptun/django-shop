@@ -6,11 +6,11 @@ from .models import Product
 
 
 class ProductService:
-    request: HttpRequest
+    request: HttpRequest | None
     user: AbstractUser | AnonymousUser | None
 
     def __init__(
-        self, request: HttpRequest, user: AbstractUser | AnonymousUser | None = None
+        self, request: HttpRequest | None, user: AbstractUser | AnonymousUser | None = None
     ) -> None:
         self.request = request
         self.user = user or getattr(request, "user", None)

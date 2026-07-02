@@ -116,8 +116,6 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
                 _reviews_count=Count(
                     "reviews", filter=Q(reviews__deleted__isnull=True), distinct=True
                 ),
-                # _orders_count=Count("orders", filter=Q(deleted=None), distinct=True),
-                # _reviews_count=Count("reviews", filter=Q(deleted=None), distinct=True),
             )
         )
 

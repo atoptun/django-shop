@@ -1,0 +1,150 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n unfold %}
+
+{% block content %}
+  <div class="px-6 py-6 max-w-7xl mx-auto">
+    <!-- Load Font Awesome for the status card icons -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+          integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer" />
+    <!-- Header with Title and Period Filter Combobox -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-base-900 dark:text-base-100">Admin Dashboard</h1>
+        <p class="text-sm text-base-500 dark:text-base-400 mt-1">Analytics and sales performance metrics</p>
+      </div>
+      <form method="get" action="" class="flex items-center gap-3">
+        <label for="period"
+               class="text-sm font-semibold text-base-500 dark:text-base-400">Filter Period:</label>
+        <select id="period"
+                name="period"
+                onchange="this.form.submit()"
+                class="bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 rounded-lg px-4 py-2 text-sm font-medium text-base-800 dark:text-base-200 shadow-sm focus:outline-hidden">
+          <option value="day" {% if current_period == 'day' %}selected{% endif %}>Today</option>
+          <option value="week" {% if current_period == 'week' %}selected{% endif %}>This Week</option>
+          <option value="month" {% if current_period == 'month' %}selected{% endif %}>This Month</option>
+          <option value="all"
+                  {% if current_period == 'all' or not current_period %}selected{% endif %}>All Time</option>
+        </select>
+      </form>
+    </div>
+    <!-- Stats Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Card 1: Total Sales -->
+      <div class="p-6 bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 rounded-lg flex flex-col gap-4 shadow-xs">
+        <div class="flex justify-between items-start">
+          <span class="text-sm font-semibold text-base-500 dark:text-base-400 uppercase tracking-wider">Total Sales</span>
+          {% if current_period != 'all' %}
+            {% if sales_delta >= 0 %}
+              <div class="w-12 h-12 rounded-full flex justify-center items-center text-xl">
+                <i class="fa-solid fa-arrow-trend-up text-green-700 dark:text-green-500"></i>
+              </div>
+            {% else %}
+              <div class="w-12 h-12 rounded-full flex justify-center items-center text-xl">
+                <i class="fa-solid fa-arrow-trend-down text-red-600 dark:text-red-500"></i>
+              </div>
+            {% endif %}
+          {% else %}
+            <div class="w-12 h-12 rounded-full flex justify-center items-center text-xl">
+              <i class="fa-solid fa-chart-line text-base-500 dark:text-base-400"></i>
+            </div>
+          {% endif %}
+        </div>
+        <p class="text-3xl font-extrabold text-base-900 dark:text-base-100">${{ total_sales|floatformat:2 }}</p>
+        {% if current_period != 'all' %}
+          {% if sales_delta >= 0 %}
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-green-700 dark:text-green-500">
+              <i class="fa-solid fa-arrow-up text-xs"></i>
+              <span>{{ sales_delta }}% Up {{ delta_text }}</span>
+            </div>
+          {% else %}
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-500">
+              <i class="fa-solid fa-arrow-down text-xs"></i>
+              <span>{{ sales_delta|cut:"-" }}% Down {{ delta_text }}</span>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="text-xs text-base-400 dark:text-base-500">Accumulated historical sales</div>
+        {% endif %}
+      </div>
+      <!-- Card 2: Total User -->
+      <div class="p-6 bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 rounded-lg flex flex-col gap-4 shadow-xs">
+        <div class="flex justify-between items-start">
+          <span class="text-sm font-semibold text-base-500 dark:text-base-400 uppercase tracking-wider">Total Users</span>
+          <div class="w-12 h-12 rounded-full flex justify-center items-center text-xl bg-indigo-50 dark:bg-indigo-950/30">
+            <i class="fa-solid fa-users text-indigo-600 dark:text-indigo-500"></i>
+          </div>
+        </div>
+        <p class="text-3xl font-extrabold text-base-900 dark:text-base-100">{{ total_users }}</p>
+        {% if current_period != 'all' %}
+          {% if users_delta >= 0 %}
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-green-700 dark:text-green-500">
+              <i class="fa-solid fa-arrow-up text-xs"></i>
+              <span>{{ users_delta }}% More signups {{ delta_text }}</span>
+            </div>
+          {% else %}
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-500">
+              <i class="fa-solid fa-arrow-down text-xs"></i>
+              <span>{{ users_delta|cut:"-" }}% Fewer signups {{ delta_text }}</span>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="text-xs text-base-400 dark:text-base-500">Total active registered users</div>
+        {% endif %}
+      </div>
+      <!-- Card 3: Total Order -->
+      <div class="p-6 bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 rounded-lg flex flex-col gap-4 shadow-xs">
+        <div class="flex justify-between items-start">
+          <span class="text-sm font-semibold text-base-500 dark:text-base-400 uppercase tracking-wider">Total Orders</span>
+          <div class="w-12 h-12 rounded-full flex justify-center items-center text-xl bg-amber-50 dark:bg-amber-950/30">
+            <i class="fa-solid fa-box-archive text-amber-500"></i>
+          </div>
+        </div>
+        <p class="text-3xl font-extrabold text-base-900 dark:text-base-100">{{ total_orders }}</p>
+        {% if current_period != 'all' %}
+          {% if orders_delta >= 0 %}
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-green-700 dark:text-green-500">
+              <i class="fa-solid fa-arrow-up text-xs"></i>
+              <span>{{ orders_delta }}% Up {{ delta_text }}</span>
+            </div>
+          {% else %}
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-500">
+              <i class="fa-solid fa-arrow-down text-xs"></i>
+              <span>{{ orders_delta|cut:"-" }}% Down {{ delta_text }}</span>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="text-xs text-base-400 dark:text-base-500">Total placed orders</div>
+        {% endif %}
+      </div>
+      <!-- Card 4: Total Pending -->
+      <div class="p-6 bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 rounded-lg flex flex-col gap-4 shadow-xs">
+        <div class="flex justify-between items-start">
+          <span class="text-sm font-semibold text-base-500 dark:text-base-400 uppercase tracking-wider">Total Pending</span>
+          <div class="w-12 h-12 rounded-full flex justify-center items-center text-xl">
+            <i class="fa-solid fa-clock-rotate-left text-red-600 dark:text-red-500"></i>
+          </div>
+        </div>
+        <p class="text-3xl font-extrabold text-base-900 dark:text-base-100">{{ total_pending }}</p>
+        {% if current_period != 'all' %}
+          {% if pending_delta >= 0 %}
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-green-700 dark:text-green-500">
+              <i class="fa-solid fa-arrow-up text-xs"></i>
+              <span>{{ pending_delta }}% Up {{ delta_text }}</span>
+            </div>
+          {% else %}
+            <div class="flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-500">
+              <i class="fa-solid fa-arrow-down text-xs"></i>
+              <span>{{ pending_delta|cut:"-" }}% Down {{ delta_text }}</span>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="text-xs text-base-400 dark:text-base-500">Orders waiting for process</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

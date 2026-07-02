@@ -4,7 +4,10 @@ from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path
 
+from apps.dashboard.views import admin_dashboard_view
+
 urlpatterns = [
+    path("admin/dashboard/", admin_dashboard_view, name="admin_dashboard"),
     path("admin/", admin.site.urls),
     path("health/", lambda request: HttpResponse("OK", content_type="text/plain")),
     path("", include("apps.accounts.urls", namespace="accounts")),

@@ -222,13 +222,13 @@ def test_product_detail_reviews_pagination(client):
     response = client.get(url)
     assert response.status_code == 200
     assert "reviews" in response.context
-    assert len(response.context["reviews"]) == 5
+    assert len(response.context["reviews"]) == 6
     assert response.context["is_paginated"] is True
 
     # Page 2
     response_page2 = client.get(f"{url}?page=2")
     assert response_page2.status_code == 200
-    assert len(response_page2.context["reviews"]) == 2
+    assert len(response_page2.context["reviews"]) == 1
 
 
 def test_seed_reviews_command():

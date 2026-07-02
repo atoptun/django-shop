@@ -40,6 +40,7 @@ INTERNAL_IPS = [
 # Application definition
 
 INSTALLED_APPS = [
+    "apps.dashboard.apps.DashboardConfig",
     # Unfold
     "unfold",  # before django.contrib.admin
     "unfold.contrib.filters",  # optional, if special filters are needed
@@ -268,3 +269,6 @@ if DEBUG:
         # print(f"INTERNAL_IPS: {INTERNAL_IPS}")
     except Exception:
         pass
+
+
+UNFOLD = {}
