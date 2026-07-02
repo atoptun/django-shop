@@ -1,0 +1,28 @@
+{% load i18n unfold %}
+
+<nav id="nav-sidebar-inner"
+     class="bg-base-50 flex flex-col min-h-screen dark:text-font-default-dark dark:bg-base-950/20 {% element_classes 'navigation_inner' %}">
+  {% include "unfold/helpers/navigation_header.html" %}
+  {% include "unfold/helpers/search.html" %}
+  <!-- Custom Dashboard Link -->
+  <div id="nav-sidebar-custom" class="px-6 pb-2">
+    <ol class="flex flex-col gap-0.5">
+      <li>
+        <a href="{% url 'admin_dashboard' %}"
+           class="flex items-center gap-3 h-[38px] -mx-3 px-3 rounded-default truncate hover:text-primary-600 dark:hover:text-primary-500
+                  {% if '/admin/dashboard/' in request.path %}
+                    bg-base-100 font-semibold text-primary-600 dark:bg-white/[.06] dark:text-primary-500 active
+                  {% endif %}">
+          <span class="material-symbols-outlined text-[20px]">dashboard</span>
+          <span class="text-sm">Dashboard</span>
+        </a>
+      </li>
+    </ol>
+  </div>
+  {% if sidebar_navigation|length > 0 %}
+    {% include "unfold/helpers/app_list.html" with app_list=available_apps %}
+  {% else %}
+    {% include "admin/app_list.html" with app_list=available_apps show_changelinks=False %}
+  {% endif %}
+  {% include "unfold/helpers/navigation_user.html" %}
+</nav>
