@@ -178,3 +178,77 @@ def test_add_review_duplicate(client):
     messages = list(get_messages(response.wsgi_request))
     assert len(messages) == 1
     assert "You have already reviewed this product" in str(messages[0])
+
+
+def test_review_moderation_flow():
+    from apps.products.services import ProductService
+    from apps.reviews.services import ReviewService
+
+    product = ProductFactory()
+
+    # 1. Create a pending review
+    r_pending = ReviewFactory(product=product, status=Review.Status.PENDING, rating=5)
+
+    # 2. Assert it is NOT in the public reviews list
+    service = ReviewService(request=None)
+    assert r_pending not in service.get_reviews_for_product(product)
+
+    # 3. Assert it did NOT affect the product's average rating
+    product.refresh_from_db()
+    assert product.average_rating == 0.0
+
+    # 4. Approve the review and trigger rating update
+    r_pending.status = Review.Status.APPROVED
+    r_pending.save()
+
+    # Trigger rating update manually (simulating admin save_model)
+    product_service = ProductService(request=None)
+    product_service.update_product_rating(product)
+
+    product.refresh_from_db()
+    assert product.average_rating == 5.0
+    assert r_pending in service.get_reviews_for_product(product)
+
+
+def test_product_detail_reviews_pagination(client):
+    product = ProductFactory()
+    # Create 7 approved reviews
+    for _ in range(7):
+        ReviewFactory(product=product, status=Review.Status.APPROVED)
+
+    url = product.get_absolute_url()
+
+    # Page 1
+    response = client.get(url)
+    assert response.status_code == 200
+    assert "reviews" in response.context
+    assert len(response.context["reviews"]) == 5
+    assert response.context["is_paginated"] is True
+
+    # Page 2
+    response_page2 = client.get(f"{url}?page=2")
+    assert response_page2.status_code == 200
+    assert len(response_page2.context["reviews"]) == 2
+
+
+def test_seed_reviews_command():
+    from django.core.management import call_command
+    from django.core.management.base import CommandError
+
+    product = ProductFactory(slug="test-beer")
+
+    # 1. Seed 3 reviews
+    call_command("seed_reviews", "test-beer", "--quantity=3")
+
+    # Assert they are created
+    assert Review.objects.filter(product=product).count() == 3
+    product.refresh_from_db()
+    assert product.average_rating > 0.0
+
+    # 2. Try with non-existent product
+    with pytest.raises(CommandError):
+        call_command("seed_reviews", "non-existent-product")
+
+    # 3. Try with invalid quantity
+    with pytest.raises(CommandError):
+        call_command("seed_reviews", "test-beer", "--quantity=-5")

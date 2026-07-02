@@ -14,3 +14,4 @@ class ReviewFactory(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserFactory)  # type: ignore
     rating = 5
     comment = factory.Faker("text")  # type: ignore
+    status = Review.Status.APPROVED

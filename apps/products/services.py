@@ -17,6 +17,9 @@ class ProductService:
 
     def update_product_rating(self, product: Product) -> None:
         """Updates the average rating of the given product based on its reviews."""
-        average_rating = product.reviews.aggregate(average=Avg("rating"))["average"] or 0.0
+        from apps.reviews.models import Review
+
+        approved_reviews = product.reviews.filter(status=Review.Status.APPROVED)
+        average_rating = approved_reviews.aggregate(average=Avg("rating"))["average"] or 0.0
         product.average_rating = average_rating
         product.save(update_fields=["average_rating"])

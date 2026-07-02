@@ -9,8 +9,8 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from apps.products.models import Product
-from orders.models import PaymentMethod
 
+from .models import PaymentMethod
 from .services import CartService, OrderService
 
 

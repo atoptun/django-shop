@@ -1,0 +1,35 @@
+{% load static %}
+
+<h2 class="reviews-title">Latest reviews</h2>
+<div class="reviews-grid">
+  {% for review in reviews %}
+    <div class="review-card">
+      <div class="review-rating">
+        {% for i in "12345"|make_list %}
+          {% if forloop.counter <= review.rating %}
+            <i class="fa-solid fa-star"></i>
+          {% else %}
+            <i class="fa-regular fa-star"></i>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="review-body">
+        <h4 class="review-heading">Review by {{ review.user.username }}</h4>
+        <p class="review-text">{{ review.comment }}</p>
+      </div>
+      <div class="review-author">
+        <img src="{% static 'img/avatars/avatar1.svg' %}"
+             alt="User avatar"
+             class="author-avatar"
+             width="40"
+             height="40">
+        <span class="author-name">{{ review.user.username }}</span>
+      </div>
+    </div>
+  {% empty %}
+    <p>No reviews yet.</p>
+  {% endfor %}
+</div>
+{% if is_paginated %}
+  <div style="margin-top: 2rem;">{% include "snippets/pagination.html" %}</div>
+{% endif %}

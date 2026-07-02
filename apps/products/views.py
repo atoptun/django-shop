@@ -81,7 +81,6 @@ class ProductDetailView(DetailView):
         context["in_cart_quantity"] = cart_service.get_product_quantity(self.object.id)
 
         review_service = ReviewService(self.request)
-        context["reviews"] = review_service.get_reviews_for_product(product)
         can_review = review_service.can_user_review_product(product)
         already_reviewed = review_service.user_already_reviewed_product(product)
         review_form = None

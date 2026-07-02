@@ -10,6 +10,11 @@ from apps.products.models import Product
 class Review(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
 
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending Moderation"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="reviews"
@@ -18,6 +23,11 @@ class Review(SafeDeleteModel):
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     comment = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
