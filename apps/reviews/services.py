@@ -22,7 +22,7 @@ class ReviewService:
         ordered by creation date (most recent first).
         """
         reviews = list(
-            Review.objects.filter(product=product)
+            Review.objects.filter(product=product, status=Review.Status.APPROVED)
             .select_related("user")
             .order_by("-created_at")
             .all()

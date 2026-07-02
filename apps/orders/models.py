@@ -46,21 +46,6 @@ class Order(SafeDeleteModel):
     def __str__(self) -> str:
         return f"Order #{self.pk} by {self.user.username if self.user else 'Unknown'}"
 
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        if self.pk:
-            original = Order.objects.get(pk=self.pk)
-            if original.status != self.Status.CANCELLED and self.status == self.Status.CANCELLED:
-                from django.db import transaction
-                from django.db.models import F
-
-                with transaction.atomic():
-                    for item in self.items.all():
-                        if item.product:
-                            Product.objects.filter(id=item.product.id).update(
-                                stock=F("stock") + item.quantity
-                            )
-        super().save(*args, **kwargs)
-
 
 class OrderItem(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE

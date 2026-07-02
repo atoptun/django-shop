@@ -27,9 +27,9 @@ class CheckoutForm(forms.Form):
             for addr in user.addresses.all():
                 choices.append((str(addr.id), str(addr)))
             choices.append(("new", "Use a new address / Enter below"))
-            self.fields["address_choice"].choices = choices
+            self.fields["address_choice"].choices = choices  # type: ignore
         else:
-            self.fields["address_choice"].choices = [("new", "Enter address details below")]
+            self.fields["address_choice"].choices = [("new", "Enter address details below")]  # type: ignore
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean() or {}
