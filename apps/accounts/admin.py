@@ -3,7 +3,7 @@ from typing import Any
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
-from django.db.models import Count
+from django.db.models import Count, Q
 from unfold.admin import TabularInline
 
 from apps.accounts.models import Address, Profile, User
@@ -58,8 +58,8 @@ class ReviewInline(TabularInline):
     show_change_link = True
     can_add = False
     can_delete = False
-    fields = ["product", "rating", "comment", "created_at"]
-    readonly_fields = ["product", "rating", "comment", "created_at"]
+    fields = ["product", "rating", "status", "comment", "created_at"]
+    readonly_fields = ["product", "rating", "status", "comment", "created_at"]
 
 
 class UserCreationForm(BaseUserCreationForm):
@@ -90,24 +90,35 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
         "reviews_count_display",
         "is_staff",
         "is_active",
+        "date_joined",
+        "last_login",
     ]
 
     def get_list_display(self, request):
         list_display = super().get_list_display(request)
+        only_admin_fields = ["is_staff", "is_superuser"]
 
         if not request.user.is_superuser:  # type: ignore
-            list_display = [
-                field for field in list_display if field not in ["is_staff", "is_superuser"]
-            ]
+            list_display = [field for field in list_display if field not in only_admin_fields]
 
         return list_display
 
     # Show counts of related objects in the list display
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.annotate(
-            _orders_count=Count("orders", distinct=True),
-            _reviews_count=Count("reviews", distinct=True),
+        return (
+            qs.select_related("profile")
+            .prefetch_related("orders", "reviews", "addresses")
+            .annotate(
+                _orders_count=Count(
+                    "orders", filter=Q(orders__deleted__isnull=True), distinct=True
+                ),
+                _reviews_count=Count(
+                    "reviews", filter=Q(reviews__deleted__isnull=True), distinct=True
+                ),
+                # _orders_count=Count("orders", filter=Q(deleted=None), distinct=True),
+                # _reviews_count=Count("reviews", filter=Q(deleted=None), distinct=True),
+            )
         )
 
     @admin.display(description="Orders", ordering="_orders_count")
@@ -132,7 +143,7 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
         self.message_user(request, f"{updated} users successfully marked as Inactive.")
 
     # Filtering and searching
-    list_filter = ["is_staff", "is_superuser", "is_active"]
+    list_filter = ["is_staff", "is_superuser", "is_active", "date_joined"]
 
     def get_list_filter(self, request):
         list_filter = super().get_list_filter(request)
@@ -185,14 +196,16 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
+        only_admin_sets = ["Permissions"]
+        only_admin_fields = ["password", "deleted"]
 
         if not request.user.is_superuser:  # type: ignore
-            fieldsets = [fs for fs in fieldsets if fs[0] != "Permissions"]
-            # Hide password field for non-superusers
+            fieldsets = [fs for fs in fieldsets if fs[0] not in only_admin_sets]
+            # Hide fields for non-superusers
             new_fieldsets = []
             for title, fields_dict in fieldsets:
                 if "fields" in fields_dict:
-                    new_fields = [f for f in fields_dict["fields"] if f != "password"]
+                    new_fields = [f for f in fields_dict["fields"] if f not in only_admin_fields]
                     new_fieldsets.append((title, {**fields_dict, "fields": tuple(new_fields)}))
                 else:
                     new_fieldsets.append((title, fields_dict))
