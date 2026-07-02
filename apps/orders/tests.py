@@ -453,12 +453,13 @@ def test_checkout_submit_out_of_stock(client):
 
 
 def test_order_cancelled_replenishes_stock():
+    from apps.orders.services import OrderService
+
     product = ProductFactory(stock=10)
     order = OrderFactory(total_price=10.00)
     OrderItemFactory(order=order, product=product, quantity=3)
 
-    order.status = Order.Status.CANCELLED
-    order.save()
+    OrderService.cancel_order(order)
 
     product.refresh_from_db()
     assert product.stock == 13
@@ -499,3 +500,152 @@ def test_checkout_emails_sent(client):
 
     admin_email = mail.outbox[1]
     assert "New Order Placed" in admin_email.subject
+
+
+def test_admin_order_item_inline_formset():
+    from django.forms import inlineformset_factory
+
+    from apps.orders.admin import OrderItemInlineFormSet
+    from apps.orders.models import OrderItem
+
+    user = UserFactory()
+    order = OrderFactory(user=user, total_price=100.00)
+    product1 = ProductFactory(stock=10, price=10.00)
+    item = OrderItemFactory(order=order, product=product1, quantity=3, price=10.00)
+
+    # Initial stock verify
+    assert product1.stock == 10
+
+    # Inline formset factory
+    OrderItemFormSet = inlineformset_factory(
+        Order,
+        OrderItem,
+        formset=OrderItemInlineFormSet,
+        fields=["product", "quantity"],
+        extra=1,
+        can_delete=True,
+    )
+
+    # 1. Edit quantity from 3 to 5 (valid)
+    data = {
+        "items-TOTAL_FORMS": "2",
+        "items-INITIAL_FORMS": "1",
+        "items-MIN_NUM_FORMS": "0",
+        "items-MAX_NUM_FORMS": "1000",
+        "items-0-id": str(item.id),
+        "items-0-product": str(product1.id),
+        "items-0-quantity": "5",
+        "items-1-id": "",
+        "items-1-product": "",
+        "items-1-quantity": "",
+    }
+    formset = OrderItemFormSet(data, instance=order, prefix="items")
+    assert formset.is_valid()
+    formset.save()
+
+    product1.refresh_from_db()
+    assert product1.stock == 8  # 2 more reserved
+    order.refresh_from_db()
+    assert order.total_price == 50.00  # 5 * 10
+
+    # 2. Edit quantity to 20 (invalid - exceeds stock 8 + 5 = 13)
+    data["items-0-quantity"] = "20"
+    formset = OrderItemFormSet(data, instance=order, prefix="items")
+    assert formset.is_valid() is False
+    assert "Insufficient stock" in str(formset.non_form_errors())
+
+    # 3. Add a new item inline
+    product2 = ProductFactory(stock=5, price=20.00)
+    data = {
+        "items-TOTAL_FORMS": "2",
+        "items-INITIAL_FORMS": "1",
+        "items-MIN_NUM_FORMS": "0",
+        "items-MAX_NUM_FORMS": "1000",
+        "items-0-id": str(item.id),
+        "items-0-product": str(product1.id),
+        "items-0-quantity": "5",
+        "items-1-id": "",
+        "items-1-product": str(product2.id),
+        "items-1-quantity": "2",
+    }
+    formset = OrderItemFormSet(data, instance=order, prefix="items")
+    assert formset.is_valid()
+    formset.save()
+
+    product2.refresh_from_db()
+    assert product2.stock == 3  # 2 reserved
+    order.refresh_from_db()
+    assert order.total_price == 90.00  # (5 * 10) + (2 * 20)
+
+    # 4. Delete an item inline
+    data = {
+        "items-TOTAL_FORMS": "2",
+        "items-INITIAL_FORMS": "2",
+        "items-MIN_NUM_FORMS": "0",
+        "items-MAX_NUM_FORMS": "1000",
+        "items-0-id": str(item.id),
+        "items-0-product": str(product1.id),
+        "items-0-quantity": "5",
+        "items-0-DELETE": "on",  # Mark for deletion
+        "items-1-id": str(order.items.exclude(id=item.id).first().id),
+        "items-1-product": str(product2.id),
+        "items-1-quantity": "2",
+    }
+    formset = OrderItemFormSet(data, instance=order, prefix="items")
+    assert formset.is_valid()
+    formset.save()
+
+    product1.refresh_from_db()
+    assert product1.stock == 13  # 5 returned
+    order.refresh_from_db()
+    assert order.total_price == 40.00  # only product2 remains (2 * 20)
+
+
+def test_admin_order_readonly_final_states():
+    from django.contrib.admin.sites import AdminSite
+
+    from apps.orders.admin import OrderAdmin
+
+    user = UserFactory()
+    order = OrderFactory(user=user, status=Order.Status.SHIPPED, total_price=10.00)
+
+    site = AdminSite()
+    admin_obj = OrderAdmin(Order, site)
+
+    # Check that when order is SHIPPED, all fields are read-only
+    from django.test import RequestFactory
+
+    rf = RequestFactory()
+    request = rf.get("/admin/")
+    request.user = UserFactory(is_superuser=True)
+
+    readonly = admin_obj.get_readonly_fields(request, order)
+    # Check some fields are in readonly
+    assert "status" in readonly
+    assert "total_price" in readonly
+
+
+def test_admin_order_item_inline_non_pending_readonly():
+    from django.contrib.admin.sites import AdminSite
+    from django.test import RequestFactory
+
+    from apps.orders.admin import OrderItemInline
+
+    user = UserFactory()
+    order = OrderFactory(user=user, status=Order.Status.PAID, total_price=10.00)
+
+    site = AdminSite()
+    inline_obj = OrderItemInline(Order, site)
+
+    rf = RequestFactory()
+    request = rf.get("/admin/")
+    request.user = UserFactory(is_superuser=True)
+
+    # Check permission restrictions for non-PENDING status
+    assert inline_obj.has_add_permission(request, order) is False
+    assert inline_obj.has_delete_permission(request, order) is False
+
+    readonly = inline_obj.get_readonly_fields(request, order)
+    assert "product" in readonly
+    assert "quantity" in readonly
+    assert "price" in readonly

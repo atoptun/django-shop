@@ -23,7 +23,7 @@ class CategoryAdmin(BaseSafeDeleteUnfoldAdmin):
         (None, {"fields": ("name", "slug", "parent")}),
         (
             ("Dates"),
-            {"classes": ["collapse"], "fields": ("created_at", "updated_at", "deleted")},
+            {"classes": ["collapse"], "fields": ("created_at", "updated_at")},
         ),
     )
 

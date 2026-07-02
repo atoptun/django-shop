@@ -2,14 +2,16 @@ from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import AbstractUser
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import TemplateView
 
 from apps.products.models import Product
+from orders.models import PaymentMethod
 
-from .services import CartService
+from .services import CartService, OrderService
 
 
 class CartView(TemplateView):
@@ -151,17 +153,16 @@ class CheckoutView(LoginRequiredMixin, View):
 
         cleaned_data = form.cleaned_data
         shipping_address = self._get_shipping_address(request, cleaned_data)
+        user = request.user
+        assert isinstance(user, AbstractUser), "User must be"
         payment_method = cleaned_data["payment_method"]
+        assert isinstance(payment_method, PaymentMethod), "Payment method must be"
 
         try:
-            order = self._create_order_transaction(
-                cart_service, request.user, shipping_address, payment_method
-            )
+            order = OrderService.create_order(cart_service, user, shipping_address, payment_method)
         except ValueError as e:
             messages.error(request, str(e))
             return self._render_checkout_page(request, form, cart_service)
-
-        self._send_order_notifications(request.user, order)
 
         messages.success(request, f"Order #{order.pk} placed successfully!")
         return redirect("accounts:order_history")
@@ -199,94 +200,3 @@ class CheckoutView(LoginRequiredMixin, View):
             f"City: {cleaned_data['city']}\n"
             f"Address: {cleaned_data['address']}"
         )
-
-    def _create_order_transaction(
-        self, cart_service: CartService, user: Any, shipping_address: str, payment_method: Any
-    ) -> Any:
-        """Create order, order items, and reserve stock atomically"""
-        from uuid import uuid4
-
-        from django.db import transaction
-
-        from apps.orders.models import CartItem, Order, OrderItem, Payment
-
-        with transaction.atomic():
-            cart_items = cart_service.get_items()
-            # 1. Concurrency-safe stock reservation (select_for_update)
-            for item in cart_items:
-                product = Product.objects.select_for_update().get(id=item["product"].id)
-                if product.stock < item["quantity"]:
-                    raise ValueError(
-                        f"Not enough stock for {product.name}. "
-                        f"Available: {product.stock}, in cart: {item['quantity']}."
-                    )
-                product.stock -= item["quantity"]
-                product.save()
-
-            # 2. Order creation
-            order = Order.objects.create(
-                user=user,
-                status=Order.Status.PENDING,
-                total_price=cart_service.get_total_price(),
-                shipping_address=shipping_address,
-            )
-
-            # 3. Order Items creation
-            for item in cart_items:
-                OrderItem.objects.create(
-                    order=order,
-                    product=item["product"],
-                    quantity=item["quantity"],
-                    price=item["product"].price,
-                )
-
-            # 4. Payment record creation
-            Payment.objects.create(
-                order=order, payment_method=payment_method, transaction_id=f"PAY-{uuid4()}"
-            )
-
-            # 5. Clear Cart
-            CartItem.objects.filter(cart=cart_service.cart).delete()
-            return order
-
-    def _send_order_notifications(self, user: Any, order: Any) -> None:
-        """Send email notifications to the user and admin about the new order."""
-        from django.conf import settings
-        from django.contrib.auth import get_user_model
-        from django.core.mail import send_mail
-
-        try:
-            send_mail(
-                subject=f"Order Confirmation - Order #{order.pk}",
-                message=(
-                    f"Hello {user.username or 'Customer'},\n\n"
-                    f"Thank you for your order!\n\n"
-                    f"Order Details:\n"
-                    f"Order ID: #{order.pk}\n"
-                    f"Total: ${order.total_price}\n"
-                    f"Shipping Address:\n{order.shipping_address}\n\n"
-                    f"We will process your order soon."
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                fail_silently=True,
-            )
-
-            User = get_user_model()
-            admin_emails = list(User.objects.filter(is_staff=True).values_list("email", flat=True))
-            if not admin_emails:
-                admin_emails = ["admin@example.com"]
-
-            send_mail(
-                subject=f"New Order Placed - Order #{order.pk}",
-                message=(
-                    f"A new order #{order.pk} has been placed by user: {user.username}.\n"
-                    f"Total: ${order.total_price}\n"
-                    f"Shipping Address:\n{order.shipping_address}"
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=admin_emails,
-                fail_silently=True,
-            )
-        except Exception as mail_err:
-            print(f"Failed to send checkout email notifications: {mail_err}")
