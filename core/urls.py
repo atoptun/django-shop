@@ -12,8 +12,9 @@ urlpatterns = [
     path("health/", lambda request: HttpResponse("OK", content_type="text/plain")),
     path("", include("apps.accounts.urls", namespace="accounts")),
     path("", include("apps.orders.urls", namespace="orders")),
-    path("", include("apps.products.urls")),
-    path("", include("apps.reviews.urls")),
+    path("", include("apps.products.urls", namespace="products")),
+    path("", include("apps.reviews.urls", namespace="reviews")),
+    path("", include("apps.payments.urls", namespace="payments")),
 ]
 
 

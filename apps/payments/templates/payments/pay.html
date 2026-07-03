@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Complete Payment | Hop & Barley{% endblock title %}
+{% block content %}
+  <main class="checkout-page-wrapper">
+    <div class="checkout-container checkout-container-pay">
+      <h1 class="checkout-title">Complete Payment</h1>
+      <div class="checkout-section">
+        <h2 class="checkout-section__title">Order Summary</h2>
+        <p class="order-summary-item"><strong>Order ID:</strong> #{{ order.id }}</p>
+        <p class="order-summary-item"><strong>Total Price:</strong> ${{ order.total_price }}</p>
+        <p class="order-summary-item"><strong>Shipping Address:</strong> {{ order.shipping_address }}</p>
+      </div>
+      <form id="payment-form"
+            class="payment-form"
+            method="post"
+            action="{% url 'payments:pay' order.uuid %}">
+        {% csrf_token %}
+        {% include "payments/snippets/payment_fields.html" %}
+        <!-- Submit / Error displays -->
+        <section class="checkout-summary checkout-summary-pay">
+          {% if error %}
+            <div class="form-errors-pay">
+              <p><strong>Error:</strong> {{ error }}</p>
+            </div>
+          {% endif %}
+          <button type="submit"
+                  class="button button--primary button--pay button--pay-full">Confirm Payment / Place Order</button>
+        </section>
+      </form>
+    </div>
+  </main>
+{% endblock content %}

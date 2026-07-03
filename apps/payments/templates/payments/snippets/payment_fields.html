@@ -1,0 +1,133 @@
+<!-- Payment Method Selection -->
+<section class="checkout-section">
+  <h2 class="checkout-section__title">Select Payment Method</h2>
+  <div class="checkout-form-group">
+    <label for="payment-method-select">Payment Method</label>
+    <select id="payment-method-select"
+            name="payment_method"
+            class="Input"
+            required>
+      {% for pm in payment_methods %}
+        <option value="{{ pm.id }}"
+                data-code="{{ pm.code }}"
+                {% if pm.id == selected_method.id %}selected{% endif %}>{{ pm.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</section>
+<!-- Dynamic Payment Form Inputs Snippet -->
+<section class="checkout-section" id="dynamic-payment-fields">
+  <!-- Stripe/Debit Form -->
+  <div id="stripe-fields" class="payment-fields-group" style="display: none">
+    <h2 class="checkout-section__title">Credit / Debit Card Details</h2>
+    {% for field in forms.debit %}
+      <div class="checkout-form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+          <span class="field-error">{{ field.errors.0 }}</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="field-help-wrapper" style="display: none;">
+      <span class="field-help-text">Use <code>4000 0000 0000 0005</code> to simulate decline / insufficient funds.</span>
+      <span class="field-help-text">Use CVV <code>000</code> to fail verification.</span>
+    </div>
+  </div>
+  <!-- PayPal Form -->
+  <div id="paypal-fields" class="payment-fields-group" style="display: none">
+    <h2 class="checkout-section__title">PayPal Authorization</h2>
+    {% for field in forms.wallet %}
+      <div class="checkout-form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+          <span class="field-error">{{ field.errors.0 }}</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="field-help-wrapper" style="display: none;">
+      <span class="field-help-text">Use <code>decline@example.com</code> to simulate authorization failure.</span>
+    </div>
+  </div>
+  <!-- Bank Transfer Form -->
+  <div id="bank-fields" class="payment-fields-group" style="display: none;">
+    <h2 class="checkout-section__title">Bank Transfer Details</h2>
+    {% for field in forms.bank %}
+      <div class="checkout-form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+          <span class="field-error">{{ field.errors.0 }}</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="bank-details-box">
+      {% if order %}
+        <p class="bank-details-title">Please transfer the exact amount of <strong>${{ order.total_price }}</strong> to the following bank account:</p>
+        <p><strong>IBAN:</strong> UA9930000100000002600123456</p>
+        <p><strong>BIC/SWIFT:</strong> MOCKUA2X</p>
+        <p><strong>Reference:</strong> ORDER-{{ order.id }}</p>
+      {% else %}
+        <p class="bank-details-title">Please transfer the exact order amount once placed to the bank account info supplied on checkout confirmation.</p>
+      {% endif %}
+    </div>
+    {% if order %}
+      <p class="bank-processing-text">Your payment status will enter <em>Processing</em> state upon confirmation. Transfers usually take up to 24 hours.</p>
+    {% endif %}
+  </div>
+  <!-- Cash On Delivery -->
+  <div id="cod-fields" class="payment-fields-group" style="display: none;">
+    <h2 class="checkout-section__title">Cash On Delivery</h2>
+    <p class="cod-info-text">No immediate payment details are required online. You will pay cash to the courier once your package arrives.</p>
+  </div>
+</section>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const selectMethod = document.getElementById("payment-method-select");
+    const fields = {
+      debit: document.getElementById("stripe-fields"),
+      wallet: document.getElementById("paypal-fields"),
+      bank: document.getElementById("bank-fields"),
+      cod: document.getElementById("cod-fields")
+    };
+
+    function updateFields() {
+      const selectedOption = selectMethod.options[selectMethod.selectedIndex];
+      const code = selectedOption.dataset.code ? selectedOption.dataset.code.toLowerCase() : "";
+
+      // Hide all groups and disable all their input elements so they won't submit
+      Object.entries(fields).forEach(([key, el]) => {
+        if (el) {
+          el.style.display = "none";
+          el.querySelectorAll("input, select, textarea").forEach(input => {
+            input.disabled = true;
+          });
+        }
+      });
+
+      // Show match and enable its inputs
+      let activeEl = null;
+      for (const [key, element] of Object.entries(fields)) {
+        if (code.includes(key) && element) {
+          activeEl = element;
+          break;
+        }
+      }
+
+      if (!activeEl && fields.debit) {
+        activeEl = fields.debit;
+      }
+
+      if (activeEl) {
+        activeEl.style.display = "block";
+        activeEl.querySelectorAll("input, select, textarea").forEach(input => {
+          input.disabled = false;
+        });
+      }
+    }
+
+    selectMethod.addEventListener("change", updateFields);
+    updateFields(); // Trigger initial view state
+  });
+</script>

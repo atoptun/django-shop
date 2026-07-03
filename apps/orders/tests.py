@@ -10,7 +10,6 @@ from apps.orders.factories import (
     CartItemFactory,
     OrderFactory,
     OrderItemFactory,
-    PaymentFactory,
 )
 from apps.orders.models import Cart, CartItem, Order
 from apps.orders.services import CartService
@@ -163,19 +162,6 @@ def test_order_item_model():
     assert order_item.product == product
     assert order_item.subtotal == 37.50
     assert str(order_item) == f"3 x {product.name}"
-
-
-def test_payment_model():
-    from apps.orders.models import PaymentMethod
-
-    method = PaymentMethod.objects.create(code="paypal", name="PayPal")
-    order = OrderFactory()
-    payment = PaymentFactory(order=order, payment_method=method, transaction_id="TX_123")
-
-    assert payment.order == order
-    assert payment.payment_method == method
-    assert payment.transaction_id == "TX_123"
-    assert str(payment) == f"Payment for Order #{order.pk} via PayPal"
 
 
 def test_cart_item_subtotal():
@@ -384,7 +370,7 @@ def test_checkout_submit_success(client):
     product = ProductFactory(price=10.00, stock=5)
     client.post(reverse("orders:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 2})
 
-    from apps.orders.models import PaymentMethod
+    from apps.payments.models import PaymentMethod
 
     method = PaymentMethod.objects.get(code="debit")
 
@@ -398,14 +384,15 @@ def test_checkout_submit_success(client):
             "city": "Lviv",
             "address": "Galitska Sq 5",
             "payment_method": method.pk,
+            "card_number": "4000 0000 0000 0005",
+            "cvv": "000",
         },
     )
     assert response.status_code == 302
-    assert response.url == reverse("accounts:order_history")
-
     from apps.orders.models import Order
 
     order = Order.objects.get(user=user)
+    assert response.url == reverse("payments:pay", kwargs={"order_uuid": order.uuid})
     assert order.status == Order.Status.PENDING
     assert order.total_price == 20.00
     assert "Jane Doe" in order.shipping_address
@@ -428,7 +415,7 @@ def test_checkout_submit_out_of_stock(client):
     product.stock = 0
     product.save()
 
-    from apps.orders.models import PaymentMethod
+    from apps.payments.models import PaymentMethod
 
     method = PaymentMethod.objects.get(code="debit")
 
@@ -442,6 +429,8 @@ def test_checkout_submit_out_of_stock(client):
             "city": "Lviv",
             "address": "Galitska Sq 5",
             "payment_method": method.pk,
+            "card_number": "4000 0000 0000 0002",
+            "cvv": "123",
         },
     )
     assert response.status_code == 200
@@ -476,7 +465,7 @@ def test_checkout_emails_sent(client):
     product = ProductFactory(price=5.00, stock=10)
     client.post(reverse("orders:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 1})
 
-    from apps.orders.models import PaymentMethod
+    from apps.payments.models import PaymentMethod
 
     method = PaymentMethod.objects.get(code="debit")
 
@@ -490,6 +479,8 @@ def test_checkout_emails_sent(client):
             "city": "Lviv",
             "address": "Galitska Sq 5",
             "payment_method": method.pk,
+            "card_number": "4000 0000 0000 0002",
+            "cvv": "123",
         },
     )
 

@@ -9,7 +9,8 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.http import HttpRequest
 
-from apps.orders.models import Cart, CartItem, Order, OrderItem, Payment, PaymentMethod
+from apps.orders.models import Cart, CartItem, Order, OrderItem
+from apps.payments.models import Payment, PaymentMethod
 from apps.products.models import Product
 
 
@@ -193,7 +194,7 @@ class OrderService:
         cart_service: CartService,
         user: AbstractUser,
         shipping_address: str,
-        payment_method: PaymentMethod,
+        payment_method: PaymentMethod | None = None,
     ) -> Order:
         """Create order, order items, and reserve stock atomically from cart"""
         cart_items = cart_service.get_items()
