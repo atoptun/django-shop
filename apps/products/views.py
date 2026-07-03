@@ -25,11 +25,10 @@ class ProductListView(ListView):
             )
 
         if categories:
-            queryset = queryset.filter(category__slug__in=categories).distinct()
             queryset = queryset.filter(
                 models.Q(category__slug__in=categories)
                 | models.Q(category__parent__slug__in=categories)
-            )
+            ).distinct()
 
         allowed_sorts = {
             "new": ["-created_at"],

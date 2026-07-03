@@ -31,6 +31,61 @@ def test_dashboard_context_day_period() -> None:
     assert context["current_period"] == "day"
 
 
+def test_dashboard_context_week_period() -> None:
+    rf = RequestFactory()
+    request = rf.get("/admin/", {"period": "week"})
+
+    # Create active users
+    UserFactory(is_active=True)
+
+    # Create orders
+    OrderFactory(total_price=150.0, status=Order.Status.PAID)
+    OrderFactory(total_price=75.0, status=Order.Status.PENDING)
+
+    context = get_dashboard_context(request, {})
+
+    assert context["total_sales"] == 150.0
+    assert context["total_orders"] == 2
+    assert context["total_pending"] == 1
+    assert context["current_period"] == "week"
+
+
+def test_dashboard_context_month_period() -> None:
+    rf = RequestFactory()
+    request = rf.get("/admin/", {"period": "month"})
+
+    # Create active users
+    UserFactory(is_active=True)
+
+    # Create orders
+    OrderFactory(total_price=200.0, status=Order.Status.DELIVERED)
+
+    context = get_dashboard_context(request, {})
+
+    assert context["total_sales"] == 200.0
+    assert context["total_orders"] == 1
+    assert context["total_pending"] == 0
+    assert context["current_period"] == "month"
+
+
+def test_dashboard_context_all_period() -> None:
+    rf = RequestFactory()
+    request = rf.get("/admin/", {"period": "all"})
+
+    # Create active users
+    UserFactory(is_active=True)
+
+    # Create orders
+    OrderFactory(total_price=300.0, status=Order.Status.SHIPPED)
+
+    context = get_dashboard_context(request, {})
+
+    assert context["total_sales"] == 300.0
+    assert context["total_orders"] == 1
+    assert context["sales_delta"] == 0.0
+    assert context["current_period"] == "all"
+
+
 def test_admin_dashboard_view_unauthenticated(client) -> None:
     url = reverse("admin_dashboard")
     response = client.get(url)

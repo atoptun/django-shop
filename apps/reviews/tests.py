@@ -252,3 +252,56 @@ def test_seed_reviews_command():
     # 3. Try with invalid quantity
     with pytest.raises(CommandError):
         call_command("seed_reviews", "test-beer", "--quantity=-5")
+
+
+def test_reviews_admin_actions(admin_client) -> None:
+    from django.contrib.admin.sites import AdminSite
+
+    from apps.reviews.admin import ReviewAdmin
+    from apps.reviews.models import Review
+
+    product = ProductFactory()
+    r1 = ReviewFactory(product=product, status=Review.Status.PENDING)
+    r2 = ReviewFactory(product=product, status=Review.Status.PENDING)
+
+    admin_site = AdminSite()
+    review_admin = ReviewAdmin(Review, admin_site)
+
+    # Test approve action
+    queryset = Review.objects.filter(pk__in=[r1.pk, r2.pk])
+    review_admin.approve_reviews(None, queryset)
+
+    r1.refresh_from_db()
+    r2.refresh_from_db()
+    assert r1.status == Review.Status.APPROVED
+    assert r2.status == Review.Status.APPROVED
+    product.refresh_from_db()
+    assert product.average_rating > 0.0
+
+    # Test reject action
+    r3 = ReviewFactory(product=product, status=Review.Status.PENDING)
+    queryset_reject = Review.objects.filter(pk=r3.pk)
+    review_admin.reject_reviews(None, queryset_reject)
+
+    r3.refresh_from_db()
+    assert r3.status == Review.Status.REJECTED
+
+
+def test_reviews_admin_save_model(admin_client) -> None:
+    from django.contrib.admin.sites import AdminSite
+
+    from apps.reviews.admin import ReviewAdmin
+    from apps.reviews.models import Review
+
+    product = ProductFactory()
+    r1 = ReviewFactory(product=product, status=Review.Status.PENDING)
+
+    admin_site = AdminSite()
+    review_admin = ReviewAdmin(Review, admin_site)
+
+    # Trigger save_model (change status to APPROVED)
+    r1.status = Review.Status.APPROVED
+    review_admin.save_model(None, r1, None, change=True)
+
+    product.refresh_from_db()
+    assert product.average_rating > 0.0

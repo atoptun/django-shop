@@ -649,3 +649,115 @@ def test_admin_order_item_inline_non_pending_readonly():
     assert "product" in readonly
     assert "quantity" in readonly
     assert "price" in readonly
+
+
+# --- Forms and Views Edge-Case Coverage ---
+
+
+def test_checkout_form_address_choices_anonymous():
+    from apps.orders.forms import CheckoutForm
+
+    form = CheckoutForm(user=None)
+    assert form.fields["address_choice"].choices == [("new", "Enter address details below")]
+
+
+def test_checkout_form_invalid_saved_address_id():
+    from apps.orders.forms import CheckoutForm
+
+    user = UserFactory()
+    # Post with an address ID that does not exist for this user
+    form = CheckoutForm(
+        data={
+            "address_choice": "9999",
+            "payment_method": "debit",
+        },
+        user=user,
+    )
+    form.fields["address_choice"].choices.append(("9999", "Fake Address"))
+    assert form.is_valid() is False
+    assert "address_choice" in form.errors
+    err_msg = "Selected address is invalid or does not belong to you."
+    assert err_msg in form.errors["address_choice"][0]
+
+
+def test_checkout_form_value_error_address():
+    from apps.orders.forms import CheckoutForm
+
+    user = UserFactory()
+    # Post with an address choice that cannot be converted to int and is not "new"
+    form = CheckoutForm(
+        data={
+            "address_choice": "not-a-number-or-new",
+            "payment_method": "debit",
+        },
+        user=user,
+    )
+    assert form.is_valid() is False
+    assert "address_choice" in form.errors
+
+
+def test_checkout_form_missing_new_address_fields():
+    from apps.orders.forms import CheckoutForm
+
+    user = UserFactory()
+    form = CheckoutForm(
+        data={
+            "address_choice": "new",
+            "payment_method": "debit",
+        },
+        user=user,
+    )
+    assert form.is_valid() is False
+    for field in ["full_name", "phone", "city", "address"]:
+        assert field in form.errors
+
+
+def test_add_to_cart_ajax_value_error(client):
+    product = ProductFactory(stock=2)
+    url = reverse("orders:add_to_cart", kwargs={"product_id": product.id})
+    # Attempt to add exceeding stock via AJAX
+    response = client.post(
+        url,
+        {"quantity": "5"},
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert "Only 2 items are available in stock." in data["error"]
+
+
+def test_update_cart_ajax_value_error(client):
+    product = ProductFactory(stock=2)
+    url = reverse("orders:update_cart", kwargs={"product_id": product.id})
+    # Setup cart with 2 items
+    session = client.session
+    session["cart"] = {str(product.id): 2}
+    session.save()
+
+    response = client.post(
+        url,
+        {"action": "increase"},
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+
+
+def test_update_cart_non_existent_product_ajax(client):
+    # Setup session cart with non-existent product ID
+    session = client.session
+    session["cart"] = {"99999": 1}
+    session.save()
+
+    url = reverse("orders:update_cart", kwargs={"product_id": 99999})
+    response = client.post(
+        url,
+        {"action": "increase"},
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert data["success"] is False
+    assert "Product does not exist" in data["error"]
