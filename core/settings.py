@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "apps.orders.apps.OrdersConfig",
     "apps.products.apps.ProductsConfig",
     "apps.reviews.apps.ReviewsConfig",
+    "apps.payments.apps.PaymentsConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

@@ -3,7 +3,7 @@ from typing import Any
 from django import forms
 
 from apps.accounts.models import Address
-from apps.orders.models import PaymentMethod
+from apps.payments.models import PaymentMethod
 
 
 class CheckoutForm(forms.Form):

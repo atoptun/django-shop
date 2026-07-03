@@ -27,7 +27,11 @@
             <div class="order-table-cell">
               <span class="order-total">${{ order.total_price }}</span>
             </div>
-            <div class="order-table-cell">
+            <div class="order-table-cell actions-cell">
+              {% if order.status == "pending" and order.payment.status != "completed" %}
+                <a href="{% url 'payments:pay' order.uuid %}"
+                   class="button button--primary button--small pay-btn">Pay Now</a>
+              {% endif %}
               <button class="button button--secondary button--small js-toggle-order-info"
                       data-order-id="{{ order.id }}">More info</button>
             </div>

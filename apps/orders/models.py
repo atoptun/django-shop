@@ -1,3 +1,4 @@
+import uuid
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
@@ -12,6 +13,8 @@ from apps.products.models import Product
 
 class Order(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
+
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -31,6 +34,8 @@ class Order(SafeDeleteModel):
     updated_at = models.DateTimeField(auto_now=True)
 
     if TYPE_CHECKING:
+        from apps.payments.models import Payment
+
         items: models.Manager["OrderItem"]
         payment: "Payment"
 
@@ -72,31 +77,6 @@ class OrderItem(SafeDeleteModel):
 
     def __str__(self) -> str:
         return f"{self.quantity} x {self.product.name if self.product else 'Unknown Product'}"
-
-
-class PaymentMethod(models.Model):
-    code = models.CharField(max_length=50, unique=True)
-    name = models.CharField(max_length=100)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class Payment(SafeDeleteModel):
-    _safedelete_policy = SOFT_DELETE_CASCADE
-
-    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="payment")
-    payment_method = models.ForeignKey(
-        PaymentMethod, on_delete=models.PROTECT, related_name="payments", null=True
-    )
-    transaction_id = models.CharField(max_length=100, unique=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self) -> str:
-        return f"Payment for Order #{self.order.pk} via {self.payment_method.name}"
 
 
 class Cart(models.Model):

@@ -2506,3 +2506,86 @@ body.user-logged-in .header__user-actions {
   text-align: center;
   opacity: 0.7;
 }
+
+/* Payment Processing Page Custom Styles */
+.checkout-container-pay {
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+.payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.order-summary-item {
+  margin-bottom: 0.5rem;
+}
+
+.field-help-wrapper {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.field-help-text {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.bank-details-box {
+  background-color: var(--background-default);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.bank-details-title {
+  margin-bottom: 0.5rem;
+}
+
+.bank-processing-text {
+  font-size: 0.9rem;
+  color: var(--grey-text);
+}
+
+.cod-info-text {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.checkout-summary-pay {
+  margin-top: 1.5rem;
+}
+
+.button--pay-full {
+  width: 100%;
+}
+
+.form-errors-pay {
+  color: var(--error-color, red);
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--error-color, red);
+  background-color: #ffeef0;
+  border-radius: 8px;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pay-btn {
+  text-decoration: none;
+  font-weight: 600;
+  text-align: center;
+}

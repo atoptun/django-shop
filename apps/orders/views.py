@@ -8,9 +8,9 @@ from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import TemplateView
 
+from apps.payments.models import PaymentMethod
 from apps.products.models import Product
 
-from .models import PaymentMethod
 from .services import CartService, OrderService
 
 
@@ -146,6 +146,14 @@ class CheckoutView(LoginRequiredMixin, View):
             return redirect("orders:cart")
 
         from apps.orders.forms import CheckoutForm
+        from apps.payments.forms import (
+            BankTransferPaymentForm,
+            CardPaymentForm,
+            CashOnDeliveryForm,
+            PayPalPaymentForm,
+            get_payment_form_class,
+        )
+        from apps.payments.services import PaymentService
 
         form = CheckoutForm(request.POST, user=request.user)
         if not form.is_valid():
@@ -156,26 +164,96 @@ class CheckoutView(LoginRequiredMixin, View):
         user = request.user
         assert isinstance(user, AbstractUser), "User must be"
         payment_method = cleaned_data["payment_method"]
-        assert isinstance(payment_method, PaymentMethod), "Payment method must be"
+
+        # Validate the corresponding payment method inputs
+        form_class = get_payment_form_class(payment_method.code)
+        payment_form = form_class(request.POST)
+
+        if not payment_form.is_valid():
+            messages.error(request, "Invalid payment details provided.")
+            forms_map = {
+                "debit": CardPaymentForm(),
+                "wallet": PayPalPaymentForm(),
+                "bank": BankTransferPaymentForm(),
+                "cod": CashOnDeliveryForm(),
+            }
+            forms_map[payment_method.code.lower()] = payment_form
+            return self._render_checkout_page(request, form, cart_service, forms_map)
 
         try:
+            # 1. Create order
             order = OrderService.create_order(cart_service, user, shipping_address, payment_method)
         except ValueError as e:
             messages.error(request, str(e))
             return self._render_checkout_page(request, form, cart_service)
 
-        messages.success(request, f"Order #{order.pk} placed successfully!")
-        return redirect("accounts:order_history")
+        # 2. Process payment immediately
+        payment_data = payment_form.cleaned_data
+        result = PaymentService.process_order_payment(order, payment_method, payment_data)
+
+        if result["success"]:
+            from apps.payments.models import Payment
+
+            if result["status"] == Payment.Status.COMPLETED:
+                messages.success(request, "Order placed and payment was successful!")
+            elif result["status"] == Payment.Status.PROCESSING:
+                messages.info(
+                    request,
+                    "Order placed! Payment is being processed "
+                    "(Bank Transfer). Waiting for verification.",
+                )
+            elif result["status"] == Payment.Status.PENDING:
+                messages.success(
+                    request,
+                    "Order placed successfully via Cash On Delivery! Pay on arrival.",
+                )
+            return redirect("accounts:order_history")
+        else:
+            messages.warning(
+                request,
+                f"Order created, but payment failed: {result['error']}. "
+                "Please retry your payment below.",
+            )
+            return redirect("payments:pay", order_uuid=order.uuid)
 
     def _render_checkout_page(
-        self, request: HttpRequest, form: Any, cart_service: CartService
+        self,
+        request: HttpRequest,
+        form: Any,
+        cart_service: CartService,
+        forms_map: dict | None = None,
     ) -> HttpResponse:
         """Renders the checkout page with the provided form and cart details."""
+        if not forms_map:
+            from apps.payments.forms import (
+                BankTransferPaymentForm,
+                CardPaymentForm,
+                CashOnDeliveryForm,
+                PayPalPaymentForm,
+            )
+
+            forms_map = {
+                "debit": CardPaymentForm(),
+                "wallet": PayPalPaymentForm(),
+                "bank": BankTransferPaymentForm(),
+                "cod": CashOnDeliveryForm(),
+            }
+
+        payment_methods = PaymentMethod.objects.filter(is_active=True)
+        selected_method = (
+            form.payment_method.value
+            if hasattr(form, "payment_method")
+            else payment_methods.first()
+        )
+
         context = {
             "form": form,
             "cart_items": cart_service.get_items(),
             "cart_total": cart_service.get_total_price(),
             "profile": getattr(request.user, "profile", None),
+            "payment_methods": payment_methods,
+            "selected_method": selected_method,
+            "forms": forms_map,
         }
         from django.shortcuts import render
 

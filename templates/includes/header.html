@@ -38,13 +38,14 @@
         </div>
       {% else %}
         <!-- Block for authorized user -->
-        <a href="{% url 'accounts:profile' %}"
+        <a href="{% url 'accounts:order_history' %}"
            class="user-icon"
            aria-label="My Account">
           <img src="{% static 'img/icons/User_alt.svg' %}"
                width="30"
                height="30"
-               alt="User Account">
+               alt="user.username"
+               title="{{ user.username }}">
         </a>
       {% endif %}
       <a href="{% url 'orders:cart' %}"

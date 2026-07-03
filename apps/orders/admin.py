@@ -4,11 +4,12 @@ from django.contrib import admin
 from django.db import transaction
 from django.forms import BaseInlineFormSet, ValidationError
 from django.http import HttpRequest
-from unfold.admin import ModelAdmin, StackedInline, TabularInline
+from unfold.admin import TabularInline
 
 from apps.common.admin import BaseSafeDeleteUnfoldAdmin
+from apps.payments.models import Payment
 
-from .models import Order, OrderItem, Payment, PaymentMethod
+from .models import Order, OrderItem
 from .services import OrderService
 
 
@@ -148,11 +149,19 @@ class OrderItemInline(TabularInline):
 
 
 # Inline payment record inside the Order details page
-class PaymentInline(StackedInline):
+class PaymentInline(TabularInline):
     model = Payment
     extra = 0
     tab = True
-    raw_id_fields = ["payment_method"]
+    readonly_fields = ["payment_method", "transaction_id", "status", "created_at"]
+    fields = ["payment_method", "transaction_id", "status", "created_at"]
+    can_delete = False
+
+    def has_add_permission(self, request: HttpRequest, obj: Order | None = None) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj: Order | None = None) -> bool:
+        return False
 
 
 @admin.register(Order)
@@ -192,17 +201,3 @@ class OrderAdmin(BaseSafeDeleteUnfoldAdmin):
                 return
 
         super().save_model(request, obj, form, change)
-
-
-@admin.register(PaymentMethod)
-class PaymentMethodAdmin(ModelAdmin):
-    list_display = ["code", "name", "is_active"]
-    list_filter = ["is_active"]
-    search_fields = ["code", "name"]
-
-
-@admin.register(Payment)
-class PaymentAdmin(BaseSafeDeleteUnfoldAdmin):
-    list_display = ["id", "order", "payment_method", "transaction_id", "created_at"]
-    list_filter = ["payment_method", "created_at"]
-    search_fields = ["transaction_id", "order__id"]

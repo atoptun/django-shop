@@ -90,24 +90,7 @@
             {% if form.address.errors %}<span class="field-error">{{ form.address.errors.0 }}</span>{% endif %}
           </div>
         </section>
-        <!-- Payment Method -->
-        <section class="checkout-section">
-          <h2 class="checkout-section__title">Payment Method</h2>
-          <div class="checkout-form-group">
-            <label for="payment-method">Select Payment Method</label>
-            <select id="payment-method" name="payment_method" class="Input" required>
-              {% for val, label in form.fields.payment_method.choices %}
-                {% if val %}
-                  <option value="{{ val }}"
-                          {% if form.payment_method.value|stringformat:"s" == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
-                {% else %}
-                  <option value="">{{ label }}</option>
-                {% endif %}
-              {% endfor %}
-            </select>
-            {% if form.payment_method.errors %}<span class="field-error">{{ form.payment_method.errors.0 }}</span>{% endif %}
-          </div>
-        </section>
+        {% include "payments/snippets/payment_fields.html" %}
         <!-- Order Summary -->
         <section class="checkout-summary">
           <h2 class="checkout-section__title">Order Summary</h2>
@@ -124,6 +107,7 @@
   </main>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
+      // 1. Saved Addresses helper
       const addressChoiceSelect = document.getElementById("address-choice");
       const fullNameInput = document.getElementById("full-name");
       const phoneInput = document.getElementById("phone");
@@ -149,11 +133,10 @@
           }
         });
 
-        // Trigger initial prefill if a default/preselected option is set
         if (addressChoiceSelect.value && addressChoiceSelect.value !== "new") {
           addressChoiceSelect.dispatchEvent(new Event("change"));
         }
       }
     });
   </script>
-{% endblock %}
+{% endblock content %}
