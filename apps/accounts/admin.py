@@ -4,7 +4,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserCreationForm as BaseUserCreationForm
 from django.db.models import Count, Q
-from unfold.admin import TabularInline
+from django.http import HttpRequest
+from unfold.admin import StackedInline, TabularInline
 
 from apps.accounts.models import Address, Profile, User
 from apps.common.admin import BaseSafeDeleteUnfoldAdmin
@@ -30,13 +31,14 @@ class AddressInline(TabularInline):
         return formfield
 
 
-class ProfileInline(TabularInline):
+class ProfileInline(StackedInline):
     model = Profile
     extra = 0
     tab = True
     can_add = False
     can_delete = False
-    fields = ["phone"]
+
+    fields = ["phone", "city", "address"]
     # readonly_fields = ["created_at", "updated_at", "deleted"]
 
 
@@ -92,11 +94,12 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
         "is_active",
         "date_joined",
         "last_login",
+        "deleted",
     ]
 
-    def get_list_display(self, request):
+    def get_list_display(self, request: HttpRequest) -> list | tuple:
         list_display = super().get_list_display(request)
-        only_admin_fields = ["is_staff", "is_superuser"]
+        only_admin_fields = ["is_staff", "is_superuser", "deleted"]
 
         if not request.user.is_superuser:  # type: ignore
             list_display = [field for field in list_display if field not in only_admin_fields]
@@ -104,9 +107,16 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
         return list_display
 
     # Show counts of related objects in the list display
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest):
         qs = super().get_queryset(request)
-        return (
+        if not request.user.is_superuser:  # type: ignore
+            qs = (
+                qs.exclude(is_superuser=True)
+                # .exclude(is_staff=True)
+                .exclude(deleted__isnull=False)
+            )
+
+        qs = (
             qs.select_related("profile")
             .prefetch_related("orders", "reviews", "addresses")
             .annotate(
@@ -118,6 +128,7 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
                 ),
             )
         )
+        return qs
 
     @admin.display(description="Orders", ordering="_orders_count")
     def orders_count_display(self, obj):
@@ -131,19 +142,19 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
     actions = ["mark_as_active", "mark_as_inactive"]
 
     @admin.action(description="Mark selected users as Active")
-    def mark_as_active(self, request, queryset):
+    def mark_as_active(self, request: HttpRequest, queryset):
         updated = queryset.update(is_active=True)
         self.message_user(request, f"{updated} users successfully marked as Active.")
 
     @admin.action(description="Mark selected users as Inactive")
-    def mark_as_inactive(self, request, queryset):
+    def mark_as_inactive(self, request: HttpRequest, queryset):
         updated = queryset.exclude(is_superuser=True).exclude(is_staff=True).update(is_active=False)
         self.message_user(request, f"{updated} users successfully marked as Inactive.")
 
     # Filtering and searching
     list_filter = ["is_staff", "is_superuser", "is_active", "date_joined"]
 
-    def get_list_filter(self, request):
+    def get_list_filter(self, request: HttpRequest):
         list_filter = super().get_list_filter(request)
 
         if not request.user.is_superuser:  # type: ignore
@@ -192,7 +203,7 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
         ),
     )
 
-    def get_fieldsets(self, request, obj=None):
+    def get_fieldsets(self, request: HttpRequest, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         only_admin_sets = ["Permissions"]
         only_admin_fields = ["password", "deleted"]
@@ -214,7 +225,7 @@ class UserAdmin(BaseSafeDeleteUnfoldAdmin, BaseUserAdmin):
     # Customizing readonly fields based on user permissions
     readonly_fields = ["last_login", "date_joined", "deleted"]
 
-    def get_readonly_fields(self, request, obj=None):
+    def get_readonly_fields(self, request: HttpRequest, obj=None):
         readonly_fields = super().get_readonly_fields(request, obj)
 
         if not request.user.is_superuser:  # type: ignore
