@@ -141,7 +141,18 @@
                   {% endif %}
                   <div class="product-card__info">
                     <h4 class="product-card__name">{{ product.name }}</h4>
-                    <p class="product-card__price">${{ product.price }}</p>
+                    <div class="product-card__price_wrapper">
+                      <p class="product-card__price">${{ product.price }}</p>
+                      <div class="product-card__rating">
+                        {% for i in "12345"|make_list %}
+                          {% if forloop.counter <= product.average_rating %}
+                            <i class="fa-solid fa-star"></i>
+                          {% else %}
+                            <i class="fa-regular fa-star"></i>
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                    </div>
                     <p class="product-card__description">{{ product.description|truncatewords:10 }}</p>
                   </div>
                 </div>

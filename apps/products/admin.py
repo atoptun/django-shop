@@ -3,9 +3,11 @@ from django.contrib.admin import DateFieldListFilter
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
+from unfold.admin import TabularInline
 from unfold.contrib.filters.admin import RangeDateFilter
 
 from apps.common.admin import BaseSafeDeleteUnfoldAdmin
+from apps.reviews.models import Review
 
 from .models import Category, Product
 
@@ -26,6 +28,19 @@ class CategoryAdmin(BaseSafeDeleteUnfoldAdmin):
             {"classes": ["collapse"], "fields": ("created_at", "updated_at")},
         ),
     )
+
+
+class ReviewInline(TabularInline):
+    model = Review
+    extra = 0
+    tab = True
+    can_add = False
+    can_delete = False
+    show_change_link = True
+    verbose_name = "Review"
+    verbose_name_plural = "Reviews"
+    fields = ["user", "rating", "status", "comment", "created_at"]
+    readonly_fields = ["user", "rating", "comment", "created_at"]
 
 
 @admin.register(Product)
@@ -54,6 +69,7 @@ class ProductAdmin(BaseSafeDeleteUnfoldAdmin):
     prepopulated_fields = {"slug": ("name",)}
     list_editable = ["price", "stock", "is_active"]
 
+    inlines = [ReviewInline]
     readonly_fields = [
         # "technical_specifications",
         "created_at",
@@ -75,7 +91,7 @@ class ProductAdmin(BaseSafeDeleteUnfoldAdmin):
         "average_rating",
         "created_at",
         "updated_at",
-        "deleted",
+        # "deleted",
     ]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
@@ -92,7 +108,7 @@ class ProductAdmin(BaseSafeDeleteUnfoldAdmin):
     def avg_rating(self, obj: Product) -> str:
         avg = getattr(obj, "average_rating", None)
         count = getattr(obj, "_review_count", 0)
-        if avg is None:
+        if count == 0:
             return "No reviews"
         return f"{avg:.1f} ({count})"
 

@@ -58,10 +58,14 @@ services:
           path: ./uv.lock
 
   postgres:
+    restart: no
     environment:
       - POSTGRES_INITDB_ARGS=--username=${POSTGRES_USER}
     ports:
       - "5433:5432"
+
+  pgadmin4:
+    restart: no
 
 volumes:
   pg_data:
