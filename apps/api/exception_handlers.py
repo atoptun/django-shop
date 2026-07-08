@@ -20,7 +20,7 @@ def custom_exception_handler(exc, context):
 
         custom_response_data = {
             "error": "Internal Server Error",
-            "message": "Somthing went wrong. Please try again later.",
+            "message": "Something went wrong. Please try again later.",
             "details": str(exc) if settings.DEBUG else None,
         }
 

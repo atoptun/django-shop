@@ -82,7 +82,7 @@ class UserProfileAPIView(generics.RetrieveUpdateAPIView):
     """Get/update the authenticated user's profile."""
 
     serializer_class = UserProfileSerializer
-    permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_object(self):
         request = cast(AuthenticatedRequest, self.request)
@@ -107,7 +107,10 @@ class AddressViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
-        headers = self.get_success_headers(serializer.data)
+        headers = {}
+        if not is_many:
+            headers = self.get_success_headers(serializer.data)
+
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):

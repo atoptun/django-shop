@@ -284,9 +284,9 @@ SPECTACULAR_SETTINGS = {
                                 "error": {"type": "string", "example": "Internal Server Error"},
                                 "message": {
                                     "type": "string",
-                                    "example": "Somthing went wrong. Please try again later.",
+                                    "example": "Something went wrong. Please try again later.",
                                 },
-                                "details": {"type": "string", "example": "null"},
+                                "details": {"type": "string", "nullable": True, "example": None},
                             },
                         }
                     }
