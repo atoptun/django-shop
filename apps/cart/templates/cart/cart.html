@@ -39,8 +39,8 @@
               </div>
               <div class="cart-item__actions">
                 <div class="cart-item__quantity-selector">
-                  <form method="POST"
-                        action="{% url 'orders:update_cart' item.product.id %}"
+                  <form method="post"
+                        action="{% url 'cart:update_cart' item.product.id %}"
                         class="cart-item__quantity-form">
                     {% csrf_token %}
                     <button type="submit"
@@ -60,8 +60,8 @@
                     </button>
                   </form>
                 </div>
-                <form method="POST"
-                      action="{% url 'orders:remove_from_cart' item.product.id %}">
+                <form method="post"
+                      action="{% url 'cart:remove_from_cart' item.product.id %}">
                   {% csrf_token %}
                   <button type="submit" class="button--remove" data-action="remove">
                     Remove <i class="fa-solid fa-xmark"></i>

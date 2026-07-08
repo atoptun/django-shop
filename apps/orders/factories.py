@@ -1,24 +1,8 @@
 import factory
 
 from apps.accounts.factories import UserFactory
-from apps.orders.models import Cart, CartItem, Order, OrderItem
+from apps.orders.models import Order, OrderItem
 from apps.products.factories import ProductFactory
-
-
-class CartFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Cart
-
-    user = factory.SubFactory(UserFactory)  # type: ignore
-
-
-class CartItemFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = CartItem
-
-    cart = factory.SubFactory(CartFactory)  # type: ignore
-    product = factory.SubFactory(ProductFactory)  # type: ignore
-    quantity = 1
 
 
 class OrderFactory(factory.django.DjangoModelFactory):

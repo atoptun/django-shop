@@ -48,7 +48,7 @@
                title="{{ user.username }}">
         </a>
       {% endif %}
-      <a href="{% url 'orders:cart' %}"
+      <a href="{% url 'cart:cart_detail' %}"
          class="cart-icon"
          aria-label="Shopping Cart">
         <img src="{% static 'img/icons/Shopping_bag.svg' %}"
