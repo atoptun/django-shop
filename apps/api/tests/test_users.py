@@ -38,9 +38,6 @@ def test_user_registration_success(api_client):
     data = {
         "email": "newuser@example.com",
         "password": "strongpassword123",
-        "first_name": "Alice",
-        "last_name": "Smith",
-        "profile": {"phone": "+380507654321", "city": "Lviv", "address": "Shevchenka St 10"},
     }
     res = api_client.post(url, data, format="json")
     assert res.status_code == status.HTTP_201_CREATED

@@ -20,7 +20,7 @@ class IsOwner(permissions.IsAuthenticated):
         return False
 
 
-class IsOwnerOrReadOnly(permissions.BasePermission):
+class IsOwnerOrAuthReadOnly(permissions.BasePermission):
     """
     Object-level permission to only allow owners to edit.
     """

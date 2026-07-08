@@ -15,9 +15,14 @@ from rest_framework_simplejwt.views import (
 
 from apps.accounts.models import Address
 
-from ..permissions import IsOwner, IsOwnerOrReadOnly
+from ..permissions import IsOwner, IsOwnerOrAuthReadOnly
 from ..requests import AuthenticatedRequest
-from ..serializers.users import AddressSerializer, UserProfileSerializer, UserRegisterSerializer
+from ..serializers.users import (
+    AddressSerializer,
+    TokenPairSerializer,
+    UserProfileSerializer,
+    UserRegisterSerializer,
+)
 
 
 @extend_schema(tags=["User Authentication"])
@@ -38,13 +43,8 @@ class UserTokenRefreshView(SimpleJWTTokenRefreshView):
     pass
 
 
-class TokenPairSerializer(serializers.Serializer):
-    refresh = serializers.CharField()
-    access = serializers.CharField()
-
-
 class UserRegisterResponseSerializer(serializers.Serializer):
-    user = UserRegisterSerializer()
+    user = UserProfileSerializer()
     tokens = TokenPairSerializer()
 
 
@@ -67,7 +67,7 @@ class UserRegisterAPIView(generics.CreateAPIView):
 
         return Response(
             {
-                "user": UserRegisterSerializer(user).data,
+                "user": UserProfileSerializer(user).data,
                 "tokens": {
                     "refresh": str(refresh),
                     "access": str(refresh.access_token),
@@ -82,7 +82,7 @@ class UserProfileAPIView(generics.RetrieveUpdateAPIView):
     """Get/update the authenticated user's profile."""
 
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, IsOwnerOrAuthReadOnly]
 
     def get_object(self):
         request = cast(AuthenticatedRequest, self.request)

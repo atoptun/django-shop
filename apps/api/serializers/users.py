@@ -4,6 +4,11 @@ from rest_framework import serializers
 from apps.accounts.models import Address, Profile, User
 
 
+class TokenPairSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for profile model.
