@@ -82,7 +82,7 @@ class UserProfileAPIView(generics.RetrieveUpdateAPIView):
     """Get/update the authenticated user's profile."""
 
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrAuthReadOnly]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         request = cast(AuthenticatedRequest, self.request)
