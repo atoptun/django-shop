@@ -19,13 +19,25 @@ class Category(SafeDeleteModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    if TYPE_CHECKING:
+        children: models.Manager["Category"]
+
     class Meta:
         verbose_name_plural = "Categories"
         ordering = ["name"]
 
     def save(self, *args, **kwargs) -> None:
-        if self.parent and self.parent == self:
-            raise ValueError("A category cannot be its own parent.")
+        if self.parent:
+            current = self.parent
+            visited = set()
+            while current is not None:
+                if current == self:
+                    raise ValueError("Category cycle detected.")
+                if current.id in visited:
+                    raise ValueError("Category cycle detected.")
+                visited.add(current.id)
+                current = current.parent
+
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)

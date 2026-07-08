@@ -47,6 +47,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
+class UserRegisterResponseSerializer(serializers.Serializer):
+    user = UserProfileSerializer()
+    tokens = TokenPairSerializer()
+
+
 class UserRegisterSerializer(serializers.ModelSerializer):
     """
     Serializer for user registration.

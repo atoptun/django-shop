@@ -2,6 +2,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
+from .views.products import CategoryAPIViewSet, ProductViewSet
 from .views.users import (
     AddressViewSet,
     UserLoginView,
@@ -14,6 +15,8 @@ app_name = "api"
 
 router = DefaultRouter()
 router.register(r"users/addresses", AddressViewSet, basename="user-addresses")
+router.register(r"categories", CategoryAPIViewSet, basename="categories")
+router.register(r"products", ProductViewSet, basename="products")
 
 
 urlpatterns = [
