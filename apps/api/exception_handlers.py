@@ -9,9 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 def custom_exception_handler(exc, context):
-    """
-    Custom exception handler for DRF that logs unhandled exceptions.
-    For unhandled errors it returns a standardized JSON 500 response; otherwise it falls back to DRF's default handler.
+    """Custom exception handler for DRF that logs unhandled exceptions.
+
+    For unhandled errors it returns a standardized JSON 500 response;
+    otherwise it falls back to DRF's default handler.
     """
     response = exception_handler(exc, context)
 

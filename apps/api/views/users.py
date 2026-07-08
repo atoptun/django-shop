@@ -1,7 +1,7 @@
 from typing import cast
 
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, serializers, status, viewsets
+from rest_framework import generics, status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -15,12 +15,12 @@ from rest_framework_simplejwt.views import (
 
 from apps.accounts.models import Address
 
-from ..permissions import IsOwner, IsOwnerOrAuthReadOnly
+from ..permissions import IsOwner
 from ..requests import AuthenticatedRequest
 from ..serializers.users import (
     AddressSerializer,
-    TokenPairSerializer,
     UserProfileSerializer,
+    UserRegisterResponseSerializer,
     UserRegisterSerializer,
 )
 
@@ -41,11 +41,6 @@ class UserTokenRefreshView(SimpleJWTTokenRefreshView):
     """
 
     pass
-
-
-class UserRegisterResponseSerializer(serializers.Serializer):
-    user = UserProfileSerializer()
-    tokens = TokenPairSerializer()
 
 
 @extend_schema(tags=["User Authentication"])

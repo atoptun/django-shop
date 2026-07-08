@@ -19,6 +19,9 @@ class Category(SafeDeleteModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    if TYPE_CHECKING:
+        children: models.Manager["Category"]
+
     class Meta:
         verbose_name_plural = "Categories"
         ordering = ["name"]
