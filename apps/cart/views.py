@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 from django.contrib import messages
@@ -12,7 +13,6 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from apps.cart.services import CartService
-from apps.products.models import Product
 
 
 class CartView(TemplateView):
@@ -86,11 +86,8 @@ class UpdateCartView(View):
         total_items = cart_service.get_total_items()
         total_price = cart_service.get_total_price()
 
-        try:
-            product = Product.objects.get(id=product_id)
-            subtotal = product.price * new_qty
-        except Product.DoesNotExist:
-            subtotal = 0
+        items_by_id = {i["product"].pk: i for i in cart_service.get_items()}
+        subtotal = items_by_id[product_id]["subtotal"] if product_id in items_by_id else Decimal(0)
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse(

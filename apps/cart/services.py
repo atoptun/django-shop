@@ -123,8 +123,7 @@ class CartService:
     def get_items(self) -> list[dict[str, Any]]:
         """
         Returns a list of dicts:
-        [{'product': product, 'quantity': quantity, 'subtotal': subtotal,
-        'total_price': subtotal}]
+        [{'product': product, 'quantity': quantity, 'subtotal': subtotal}]
         """
         items: list[dict[str, Any]] = []
         if self.user and self.user.is_authenticated:
@@ -134,7 +133,6 @@ class CartService:
                         "product": item.product,
                         "quantity": item.quantity,
                         "subtotal": item.subtotal,
-                        "total_price": item.subtotal,
                     }
                 )
         else:
@@ -156,10 +154,10 @@ class CartService:
                     )
         return items
 
-    def get_total_price(self) -> Decimal | float:
+    def get_total_price(self) -> Decimal:
         """Get the total price of all items in the cart."""
 
-        return sum(item["subtotal"] for item in self.get_items())
+        return sum((item["subtotal"] for item in self.get_items()), Decimal(0))
 
     def merge_session_cart(self) -> None:
         """

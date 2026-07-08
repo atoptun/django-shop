@@ -119,7 +119,7 @@ def test_cart_item_subtotal():
     product = ProductFactory(price=11.11)
     cart_item = CartItemFactory(product=product, quantity=5)
 
-    assert cart_item.subtotal == 55.55
+    assert cart_item.subtotal == Decimal("55.55")
 
 
 @pytest.mark.django_db
