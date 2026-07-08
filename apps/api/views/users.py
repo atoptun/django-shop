@@ -94,7 +94,7 @@ class AddressViewSet(viewsets.ModelViewSet):
     """ViewSet for managing addresses."""
 
     serializer_class = AddressSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsOwner]
 
     def get_queryset(self):
         request = cast(AuthenticatedRequest, self.request)
