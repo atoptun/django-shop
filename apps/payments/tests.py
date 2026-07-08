@@ -233,7 +233,7 @@ def test_checkout_immediate_payment_success(client):
 
     product = ProductFactory(price=10.00, stock=5)
     # Add to cart
-    client.post(reverse("orders:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 1})
+    client.post(reverse("cart:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 1})
 
     method = PaymentMethodFactory(code="debit", name="Stripe Card")
     response = client.post(
@@ -266,7 +266,7 @@ def test_checkout_payment_form_invalid(client):
     client.force_login(user)
 
     product = ProductFactory(price=10.00, stock=5)
-    client.post(reverse("orders:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 1})
+    client.post(reverse("cart:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 1})
 
     method = PaymentMethodFactory(code="debit", name="Stripe Card")
     response = client.post(

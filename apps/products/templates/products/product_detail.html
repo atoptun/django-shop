@@ -52,10 +52,10 @@
           <!-- Container for managing the cart -->
           <div class="cart-controls"
                data-product-id="{{ product.id }}"
-               data-add-url="{% url 'orders:add_to_cart' product.id %}"
-               data-update-url="{% url 'orders:update_cart' product.id %}">
+               data-add-url="{% url 'cart:add_to_cart' product.id %}"
+               data-update-url="{% url 'cart:update_cart' product.id %}">
             <form method="post"
-                  action="{% url 'orders:add_to_cart' product.id %}"
+                  action="{% url 'cart:add_to_cart' product.id %}"
                   id="add-to-cart-form"
                   class="add-to-cart-form
                          {% if in_cart_quantity > 0 %}is-hidden{% endif %}">
@@ -119,8 +119,8 @@
       </section>
       <!-- Latest Reviews Section -->
       <section class="reviews-section">
-        {% if can_review and not already_reviewed %}
-          <div class="add-review-container">
+        <div class="add-review-container">
+          {% if can_review and not already_reviewed %}
             <h3 class="add-review-title">Write a Review</h3>
             <form method="post"
                   action="{% url 'reviews:add_review' product.slug %}"
@@ -129,16 +129,16 @@
               {{ review_form.as_div }}
               <button type="submit" class="button button--primary add-review-btn">Submit Review</button>
             </form>
-          </div>
-        {% elif not user.is_authenticated %}
-          <p>
-            <a href="{% url 'accounts:login' %}">Log in</a> to write a review.
-          </p>
-        {% elif already_reviewed %}
-          <p>You have already reviewed this product.</p>
-        {% else %}
-          <p>Only users who purchased this product can leave a review.</p>
-        {% endif %}
+          {% elif not user.is_authenticated %}
+            <p>
+              <a href="{% url 'accounts:login' %}">Log in</a> to write a review.
+            </p>
+          {% elif already_reviewed %}
+            <p>You have already reviewed this product.</p>
+          {% else %}
+            <p>Only users who purchased this product can leave a review.</p>
+          {% endif %}
+        </div>
         {% render_reviews product %}
       </section>
     </div>

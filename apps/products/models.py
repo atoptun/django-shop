@@ -27,6 +27,8 @@ class Category(SafeDeleteModel):
         ordering = ["name"]
 
     def save(self, *args, **kwargs) -> None:
+        if self.parent and self.parent == self:
+            raise ValueError("A category cannot be its own parent.")
         if self.parent:
             current = self.parent
             visited = set()

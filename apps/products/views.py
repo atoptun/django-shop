@@ -73,7 +73,7 @@ class ProductDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         product = self.object
 
-        from apps.orders.services import CartService
+        from apps.cart.services import CartService
         from apps.reviews.services import ReviewService
 
         cart_service = CartService(self.request)

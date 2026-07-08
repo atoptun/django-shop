@@ -15,6 +15,7 @@ urlpatterns = [
     path("", include("apps.products.urls", namespace="products")),
     path("", include("apps.reviews.urls", namespace="reviews")),
     path("", include("apps.payments.urls", namespace="payments")),
+    path("cart/", include("apps.cart.urls", namespace="cart")),
     # API URLs
     path("api/", include("apps.api.urls", namespace="api")),
 ]
