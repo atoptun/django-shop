@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "apps.products.apps.ProductsConfig",
     "apps.reviews.apps.ReviewsConfig",
     "apps.payments.apps.PaymentsConfig",
+    "apps.api.apps.ApiConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -227,7 +228,6 @@ DEFAULT_FROM_EMAIL = config.DEFAULT_FROM_EMAIL
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
@@ -239,7 +239,8 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 12,
+    "PAGE_SIZE": 10,
+    "EXCEPTION_HANDLER": "apps.api.exception_handlers.custom_exception_handler",
 }
 
 # JWT
@@ -253,10 +254,46 @@ SIMPLE_JWT = {
 
 # drf-spectacular
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Django Shop API",
+    "TITLE": "Hop & Barley API",
     "DESCRIPTION": "E-commerce shop REST API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": r"/api",
+    "TAGS": [
+        {
+            "name": "User Authentication",
+            "description": "Endpoints for JWT login, registration, and refresh",
+        },
+        {"name": "User Profile", "description": "Operations on user profiles"},
+        {"name": "User Addresses", "description": "Manage user shipping addresses"},
+        {"name": "Products", "description": "Browse and view catalog products"},
+        {"name": "Cart", "description": "Manage customer shopping cart"},
+        {"name": "Orders", "description": "Place and manage customer orders"},
+        {"name": "Reviews", "description": "Manage customer reviews for products"},
+    ],
+    "POSTPROCESSING_HOOKS": ["drf_spectacular.hooks.postprocess_schema_enums"],
+    "APPEND_COMPONENTS": {
+        "responses": {
+            "ServerErrorResponse": {
+                "description": "Internal Server Error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {"type": "string", "example": "Internal Server Error"},
+                                "message": {
+                                    "type": "string",
+                                    "example": "Something went wrong. Please try again later.",
+                                },
+                                "details": {"type": "string", "nullable": True, "example": None},
+                            },
+                        }
+                    }
+                },
+            }
+        }
+    },
 }
 
 if DEBUG:
