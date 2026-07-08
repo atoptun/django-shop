@@ -11,7 +11,13 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ["id", "name", "slug", "children"]
 
     def get_children(self, obj: Category):
-        children = obj.children.all()
+        children_map = self.context.get("children_map")
+
+        if children_map is not None and obj.pk is not None:
+            children = children_map.get(obj.pk, [])
+        else:
+            children = obj.children.all()
+
         return CategorySerializer(children, many=True, context=self.context).data
 
 

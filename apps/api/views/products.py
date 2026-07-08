@@ -23,7 +23,8 @@ class CategoryAPIViewSet(viewsets.ReadOnlyModelViewSet):
     def list(self, request, *args, **kwargs):
         """List categories with their children in a hierarchical structure."""
 
-        all_cats: list[Category] = list(self.get_queryset())
+        queryset = self.filter_queryset(self.get_queryset())
+        all_cats: list[Category] = list(queryset)
 
         children_map = defaultdict(list)
         roots = []
