@@ -28,6 +28,8 @@ class CartService:
             self.session_cart = self.request.session["cart"]
 
     def add(self, product_id: int, quantity: int = 1) -> int:
+        """Add a product to the cart or update its quantity."""
+
         product_id_str = str(product_id)
         try:
             product = Product.objects.get(id=product_id)
@@ -56,6 +58,8 @@ class CartService:
             return new_qty
 
     def update(self, product_id: int, quantity: int) -> int:
+        """Update the quantity of a product in the cart. If quantity is 0, remove the item."""
+
         product_id_str = str(product_id)
         if quantity <= 0:
             if self.user and self.user.is_authenticated:
@@ -86,6 +90,8 @@ class CartService:
             return quantity
 
     def remove(self, product_id: int) -> None:
+        """Remove a product from the cart."""
+
         product_id_str = str(product_id)
         if self.user and self.user.is_authenticated:
             CartItem.objects.filter(cart=self.cart, product_id=product_id).delete()
@@ -95,6 +101,8 @@ class CartService:
                 self.request.session.modified = True
 
     def get_product_quantity(self, product_id: int) -> int:
+        """Get the quantity of a specific product in the cart."""
+
         product_id_str = str(product_id)
         if self.user and self.user.is_authenticated:
             try:
@@ -105,12 +113,19 @@ class CartService:
             return self.session_cart.get(product_id_str, 0)
 
     def get_total_items(self) -> int:
+        """Get the total number of items in the cart."""
+
         if self.user and self.user.is_authenticated:
             return sum(item.quantity for item in self.cart.items.all())  # type: ignore
         else:
             return sum(self.session_cart.values())
 
     def get_items(self) -> list[dict[str, Any]]:
+        """
+        Returns a list of dicts:
+        [{'product': product, 'quantity': quantity, 'subtotal': subtotal,
+        'total_price': subtotal}]
+        """
         items: list[dict[str, Any]] = []
         if self.user and self.user.is_authenticated:
             for item in self.cart.items.select_related("product").all():  # type: ignore
@@ -142,19 +157,27 @@ class CartService:
         return items
 
     def get_total_price(self) -> Decimal | float:
+        """Get the total price of all items in the cart."""
+
         return sum(item["subtotal"] for item in self.get_items())
 
     def merge_session_cart(self) -> None:
+        """
+        Merges session cart into DB cart upon login.
+        """
         if not self.user.is_authenticated:  # type: ignore
             return
         session_cart: dict[str, int] = self.request.session.get("cart", {})
         if not session_cart:
             return
+
+        product_ids = [int(k) for k in session_cart]
+        products = {p.pk: p for p in Product.objects.filter(id__in=product_ids)}
+
         for pid_str, qty in session_cart.items():
             pid = int(pid_str)
-            try:
-                product = Product.objects.get(id=pid)
-            except Product.DoesNotExist:
+            product = products.get(pid)
+            if product is None:
                 continue
 
             item, created = CartItem.objects.get_or_create(cart=self.cart, product_id=pid)

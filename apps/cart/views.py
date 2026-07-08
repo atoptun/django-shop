@@ -1,7 +1,12 @@
 from typing import Any
 
 from django.contrib import messages
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBadRequest,
+    JsonResponse,
+)
 from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import TemplateView
@@ -58,8 +63,6 @@ class UpdateCartView(View):
         action = request.POST.get("action", "")
 
         if action not in ["increase", "decrease", "remove"]:
-            from django.http import HttpResponseBadRequest
-
             return HttpResponseBadRequest("Invalid or missing action")
 
         try:

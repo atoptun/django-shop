@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import RequestFactory
@@ -43,25 +45,25 @@ def test_guest_cart_lifecycle():
     service = CartService(request)
 
     assert service.get_total_items() == 0
-    assert service.get_total_price() == 0
+    assert service.get_total_price() == Decimal("0")
     assert len(service.get_items()) == 0
 
-    assert service.add(product1.id, 2) == 2
-    assert service.add(product2.id, 1) == 1
+    assert service.add(product1.pk, 2) == 2
+    assert service.add(product2.pk, 1) == 1
 
     assert service.get_total_items() == 3
-    assert service.get_total_price() == 45.00
-    assert service.get_product_quantity(product1.id) == 2
+    assert service.get_total_price() == Decimal("45.00")
+    assert service.get_product_quantity(product1.pk) == 2
 
-    assert service.update(product1.id, 5) == 5
+    assert service.update(product1.pk, 5) == 5
     assert service.get_total_items() == 6
-    assert service.get_total_price() == 75.00
+    assert service.get_total_price() == Decimal("75.00")
 
-    service.remove(product2.id)
+    service.remove(product2.pk)
     assert service.get_total_items() == 5
-    assert service.get_product_quantity(product2.id) == 0
+    assert service.get_product_quantity(product2.pk) == 0
 
-    assert service.update(product1.id, 0) == 0
+    assert service.update(product1.pk, 0) == 0
     assert service.get_total_items() == 0
 
 
@@ -74,20 +76,20 @@ def test_db_cart_lifecycle():
     request = get_mock_request(user=user)
     service = CartService(request)
 
-    assert service.add(product1.id, 1) == 1
-    assert service.add(product2.id, 2) == 2
+    assert service.add(product1.pk, 1) == 1
+    assert service.add(product2.pk, 2) == 2
 
     assert service.get_total_items() == 3
-    assert service.get_total_price() == 75.00
+    assert service.get_total_price() == Decimal("75.00")
     assert Cart.objects.filter(user=user).exists() is True
 
-    assert service.update(product1.id, 3) == 3
+    assert service.update(product1.pk, 3) == 3
     assert service.get_total_items() == 5
 
-    service.remove(product2.id)
+    service.remove(product2.pk)
     assert service.get_total_items() == 3
 
-    assert service.update(product1.id, 0) == 0
+    assert service.update(product1.pk, 0) == 0
     assert service.get_total_items() == 0
 
 
@@ -97,7 +99,7 @@ def test_merge_session_cart():
     product1 = ProductFactory(price=10.00)
     product2 = ProductFactory(price=20.00)
 
-    session_data = {"cart": {str(product1.id): 3, str(product2.id): 1}}
+    session_data = {"cart": {str(product1.pk): 3, str(product2.pk): 1}}
     request = get_mock_request(user=user, session_data=session_data)
 
     db_cart = CartFactory(user=user)

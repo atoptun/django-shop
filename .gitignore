@@ -1,4 +1,5 @@
 docs/user_data.txt
+prs/**
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

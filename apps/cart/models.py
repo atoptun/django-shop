@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any
+from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.db import models
@@ -41,5 +42,5 @@ class CartItem(models.Model):
         return f"{self.quantity} x {self.product.name} in Cart"
 
     @property
-    def subtotal(self) -> Any:
+    def subtotal(self) -> Decimal:
         return self.product.price * self.quantity
