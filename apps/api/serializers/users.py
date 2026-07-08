@@ -60,9 +60,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, data: dict) -> dict:
         if User.objects.filter(email=data["email"]).exists():
-            raise serializers.ValidationError(
-                {"error": "Registration with this email is prohibited."}
-            )
+            raise serializers.ValidationError({"email": "A user with this email already exists."})
         if data["email"]:
             data["username"] = data["email"]
         return data
