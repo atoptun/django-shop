@@ -34,7 +34,7 @@ class Category(SafeDeleteModel):
                 if current == self:
                     raise ValueError("Category cycle detected.")
                 if current.id in visited:
-                    break
+                    raise ValueError("Category cycle detected.")
                 visited.add(current.id)
                 current = current.parent
 
