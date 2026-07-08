@@ -27,8 +27,17 @@ class Category(SafeDeleteModel):
         ordering = ["name"]
 
     def save(self, *args, **kwargs) -> None:
-        if self.parent and self.parent == self:
-            raise ValueError("A category cannot be its own parent.")
+        if self.parent:
+            current = self.parent
+            visited = set()
+            while current is not None:
+                if current == self:
+                    raise ValueError("Category cycle detected.")
+                if current.id in visited:
+                    break
+                visited.add(current.id)
+                current = current.parent
+
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)

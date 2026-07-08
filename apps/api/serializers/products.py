@@ -16,8 +16,8 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductListSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source="category.name", read_only=True)
-    category_slug = serializers.CharField(source="category.slug", read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True, allow_null=True)
+    category_slug = serializers.CharField(source="category.slug", read_only=True, allow_null=True)
 
     class Meta:
         model = Product

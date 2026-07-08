@@ -13,7 +13,7 @@ from ..serializers.products import CategorySerializer, ProductListSerializer
 class CategoryAPIViewSet(viewsets.ReadOnlyModelViewSet):
     """API view set for listing and retrieving categories."""
 
-    queryset = Category.objects.filter(parent__isnull=True)
+    queryset = Category.objects.filter(parent__isnull=True).prefetch_related("children")
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
 
@@ -27,7 +27,7 @@ class ProductFilter(django_filters.FilterSet):
 
     class Meta:
         model = Product
-        fields = ["category", "is_active"]
+        fields = ["category"]
 
     def filter_in_stock(self, queryset, name, value):
         if value:
