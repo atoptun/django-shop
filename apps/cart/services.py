@@ -51,8 +51,6 @@ class CartService:
             item.save()
             return item.quantity
         else:
-            current_qty = self.session_cart.get(product_id_str, 0)
-            new_qty = current_qty + quantity
             self.session_cart[product_id_str] = new_qty
             self.request.session.modified = True
             return new_qty
@@ -149,7 +147,6 @@ class CartService:
                             "product": product,
                             "quantity": qty,
                             "subtotal": product.price * qty,
-                            "total_price": product.price * qty,
                         }
                     )
         return items

@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.http import (
     HttpRequest,
     HttpResponse,
-    HttpResponseBadRequest,
     JsonResponse,
 )
 from django.shortcuts import redirect
@@ -31,7 +30,10 @@ class AddToCartView(View):
         self, request: HttpRequest, product_id: int, *args: Any, **kwargs: Any
     ) -> HttpResponse:
         cart_service = CartService(request)
-        quantity = int(request.POST.get("quantity", 1))
+        try:
+            quantity = int(request.POST.get("quantity", 1))
+        except (ValueError, TypeError):
+            quantity = 1
 
         try:
             new_qty = cart_service.add(product_id, quantity)
@@ -63,7 +65,10 @@ class UpdateCartView(View):
         action = request.POST.get("action", "")
 
         if action not in ["increase", "decrease", "remove"]:
-            return HttpResponseBadRequest("Invalid or missing action")
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": "Invalid action"}, status=400)
+            messages.error(request, "Invalid cart action.")
+            return redirect("cart:cart_detail")
 
         try:
             new_qty = 0
@@ -83,11 +88,18 @@ class UpdateCartView(View):
             messages.error(request, str(e))
             return redirect("cart:cart_detail")
 
-        total_items = cart_service.get_total_items()
-        total_price = cart_service.get_total_price()
+        # total_items = cart_service.get_total_items()
+        # total_price = cart_service.get_total_price()
 
-        items_by_id = {i["product"].pk: i for i in cart_service.get_items()}
-        subtotal = items_by_id[product_id]["subtotal"] if product_id in items_by_id else Decimal(0)
+        # items_by_id = {i["product"].pk: i for i in cart_service.get_items()}
+        # subtotal = items_by_id[product_id]["subtotal"]
+        # if product_id in items_by_id else Decimal(0)
+
+        items = cart_service.get_items()
+        items_by_id = {i["product"].pk: i for i in items}
+        total_items = sum(i["quantity"] for i in items)
+        total_price = sum((i["subtotal"] for i in items), Decimal(0))
+        subtotal = items_by_id.get(product_id, {}).get("subtotal", Decimal(0))
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse(
