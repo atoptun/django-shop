@@ -116,8 +116,9 @@ def test_merge_session_cart():
 
 @pytest.mark.django_db
 def test_cart_item_subtotal():
-    product = ProductFactory(price=Decimal("11.11"))
+    product = ProductFactory(price=11.11)
     cart_item = CartItemFactory(product=product, quantity=5)
+
     assert cart_item.subtotal == Decimal("55.55")
 
 
@@ -191,13 +192,12 @@ def test_update_cart_view_invalid_action(client):
     product = ProductFactory()
     url = reverse("cart:update_cart", kwargs={"product_id": product.id})
 
-    # Non-AJAX missing/invalid action should redirect
+    # Missing action should return 400
     response = client.post(url)
-    assert response.status_code == 302
-    assert response.url == reverse("cart:cart_detail")
+    assert response.status_code == 400
 
-    # AJAX missing/invalid action should return 400
-    response = client.post(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+    # Invalid action should return 400
+    response = client.post(url, {"action": "invalid"})
     assert response.status_code == 400
 
 
