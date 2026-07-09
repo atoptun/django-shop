@@ -61,9 +61,11 @@ def test_create_order_success(auth_client: APIClient) -> None:
     res = cast(Response, auth_client.post(url, data, format="json"))
     assert res.status_code == status.HTTP_201_CREATED
     assert res.data["shipping_address"] == "123 Main St, Kyiv"  # type: ignore
-    assert float(res.data["total_price"]) == 20.00  # type: ignore
+    assert res.data["total_price"] == "20.00"  # type: ignore
     assert res.data["status"] == "pending"  # type: ignore
     assert len(res.data["items"]) == 1  # type: ignore
+    assert "id" not in res.data  # type: ignore
+    assert "uuid" in res.data  # type: ignore
 
     # Verify cart got cleared
     assert CartItem.objects.filter(cart=cart).exists() is False
@@ -95,6 +97,7 @@ def test_get_order_detail_owner(auth_client: APIClient) -> None:
     res = cast(Response, auth_client.get(url))
     assert res.status_code == status.HTTP_200_OK
     assert res.data["uuid"] == str(order.uuid)  # type: ignore
+    assert "id" not in res.data  # type: ignore
 
 
 @pytest.mark.django_db
@@ -103,9 +106,18 @@ def test_get_order_detail_non_owner(auth_client: APIClient) -> None:
     order = OrderFactory(user=other_user, total_price=100.00)
 
     url = reverse("api:orders-detail", kwargs={"uuid": str(order.uuid)})
-    res = cast(Response, auth_client.get(url))
-    # Expect 404 Not Found to prevent existence leaks
-    assert res.status_code == status.HTTP_404_NOT_FOUND
+
+    # GET must return 404
+    res_get = cast(Response, auth_client.get(url))
+    assert res_get.status_code == status.HTTP_404_NOT_FOUND
+
+    # PUT must return 404
+    res_put = cast(Response, auth_client.put(url, {"status": "cancelled"}, format="json"))
+    assert res_put.status_code == status.HTTP_404_NOT_FOUND
+
+    # DELETE must return 404
+    res_delete = cast(Response, auth_client.delete(url))
+    assert res_delete.status_code == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.django_db

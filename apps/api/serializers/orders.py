@@ -11,7 +11,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ["id", "product", "quantity", "price", "subtotal"]
+        fields = ["product", "quantity", "price", "subtotal"]
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -20,7 +20,6 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            "id",
             "uuid",
             "status",
             "total_price",
@@ -39,9 +38,4 @@ class OrderCreateSerializer(serializers.Serializer):
 
 
 class OrderUpdateSerializer(serializers.Serializer):
-    status = serializers.CharField()
-
-    def validate_status(self, value: str) -> str:
-        if value.lower() != "cancelled":
-            raise serializers.ValidationError("Only 'cancelled' status changes are allowed.")
-        return value.lower()
+    status = serializers.ChoiceField(choices=["cancelled"])
