@@ -3,19 +3,20 @@ from typing import Any
 
 from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.http import HttpRequest
+from rest_framework.request import Request as DRFRequest
 
 from apps.cart.models import Cart, CartItem
 from apps.products.models import Product
 
 
 class CartService:
-    request: HttpRequest
+    request: HttpRequest | DRFRequest
     user: AbstractUser | AnonymousUser | None
     cart: Cart | None
     session_cart: dict[str, int]
 
     def __init__(
-        self, request: HttpRequest, user: AbstractUser | AnonymousUser | None = None
+        self, request: HttpRequest | DRFRequest, user: AbstractUser | AnonymousUser | None = None
     ) -> None:
         self.request = request
         self.user = user or getattr(request, "user", None)
