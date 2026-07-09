@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from apps.accounts.factories import UserFactory
+from apps.api.tests import AuthClient
 from apps.cart.factories import CartFactory, CartItemFactory
 from apps.cart.models import CartItem
 from apps.orders.factories import OrderFactory
@@ -32,7 +33,7 @@ def test_get_orders_unauthenticated(api_client: APIClient) -> None:
 
 
 @pytest.mark.django_db
-def test_get_orders_authenticated_empty(auth_client: APIClient) -> None:
+def test_get_orders_authenticated_empty(auth_client: AuthClient) -> None:
     url = reverse("api:orders-list")
     res = cast(Response, auth_client.get(url))
     assert res.status_code == status.HTTP_200_OK
@@ -40,7 +41,7 @@ def test_get_orders_authenticated_empty(auth_client: APIClient) -> None:
 
 
 @pytest.mark.django_db
-def test_create_order_success(auth_client: APIClient) -> None:
+def test_create_order_success(auth_client: AuthClient) -> None:
     user = auth_client.user  # type: ignore
     product = ProductFactory(price=10.00, stock=5)
 
@@ -60,19 +61,20 @@ def test_create_order_success(auth_client: APIClient) -> None:
 
     res = cast(Response, auth_client.post(url, data, format="json"))
     assert res.status_code == status.HTTP_201_CREATED
-    assert res.data["shipping_address"] == "123 Main St, Kyiv"  # type: ignore
-    assert res.data["total_price"] == "20.00"  # type: ignore
-    assert res.data["status"] == "pending"  # type: ignore
-    assert len(res.data["items"]) == 1  # type: ignore
-    assert "id" not in res.data  # type: ignore
-    assert "uuid" in res.data  # type: ignore
+    res_data = cast(dict, res.data)
+    assert res_data["shipping_address"] == "123 Main St, Kyiv"
+    assert res_data["total_price"] == "20.00"
+    assert res_data["status"] == "pending"
+    assert len(res_data["items"]) == 1
+    assert "id" not in res_data
+    assert "uuid" in res_data
 
     # Verify cart got cleared
     assert CartItem.objects.filter(cart=cart).exists() is False
 
 
 @pytest.mark.django_db
-def test_create_order_empty_cart(auth_client: APIClient) -> None:
+def test_create_order_empty_cart(auth_client: AuthClient) -> None:
     payment_method, _ = PaymentMethod.objects.get_or_create(
         code="cod", defaults={"name": "Cash on Delivery", "is_active": True}
     )
@@ -89,19 +91,20 @@ def test_create_order_empty_cart(auth_client: APIClient) -> None:
 
 
 @pytest.mark.django_db
-def test_get_order_detail_owner(auth_client: APIClient) -> None:
-    user = auth_client.user  # type: ignore
+def test_get_order_detail_owner(auth_client: AuthClient) -> None:
+    user = auth_client.user
     order = OrderFactory(user=user, total_price=100.00)
 
     url = reverse("api:orders-detail", kwargs={"uuid": str(order.uuid)})
     res = cast(Response, auth_client.get(url))
     assert res.status_code == status.HTTP_200_OK
-    assert res.data["uuid"] == str(order.uuid)  # type: ignore
-    assert "id" not in res.data  # type: ignore
+    res_data = cast(dict, res.data)
+    assert res_data["uuid"] == str(order.uuid)
+    assert "id" not in res_data
 
 
 @pytest.mark.django_db
-def test_get_order_detail_non_owner(auth_client: APIClient) -> None:
+def test_get_order_detail_non_owner(auth_client: AuthClient) -> None:
     other_user = UserFactory()
     order = OrderFactory(user=other_user, total_price=100.00)
 
@@ -121,7 +124,7 @@ def test_get_order_detail_non_owner(auth_client: APIClient) -> None:
 
 
 @pytest.mark.django_db
-def test_cancel_order_via_delete(auth_client: APIClient) -> None:
+def test_cancel_order_via_delete(auth_client: AuthClient) -> None:
     user = auth_client.user  # type: ignore
     order = OrderFactory(user=user, status=Order.Status.PENDING, total_price=50.00)
 
@@ -135,8 +138,8 @@ def test_cancel_order_via_delete(auth_client: APIClient) -> None:
 
 
 @pytest.mark.django_db
-def test_update_status_invalid_fails(auth_client: APIClient) -> None:
-    user = auth_client.user  # type: ignore
+def test_update_status_invalid_fails(auth_client: AuthClient) -> None:
+    user = auth_client.user
     order = OrderFactory(user=user, status=Order.Status.PENDING, total_price=50.00)
 
     url = reverse("api:orders-detail", kwargs={"uuid": str(order.uuid)})
@@ -155,8 +158,8 @@ def test_update_status_invalid_fails(auth_client: APIClient) -> None:
 
 
 @pytest.mark.django_db
-def test_cancel_shipped_order_fails(auth_client: APIClient) -> None:
-    user = auth_client.user  # type: ignore
+def test_cancel_shipped_order_fails(auth_client: AuthClient) -> None:
+    user = auth_client.user
     order = OrderFactory(user=user, status=Order.Status.SHIPPED, total_price=50.00)
 
     url = reverse("api:orders-detail", kwargs={"uuid": str(order.uuid)})
