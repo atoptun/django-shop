@@ -25,6 +25,8 @@ class OrderService:
     ) -> Order:
         """Create order, order items, and reserve stock atomically from cart"""
         cart_items = cart_service.get_items()
+        if not cart_items:
+            raise ValueError("Cannot create an order from an empty cart.")
 
         # 1. Concurrency-safe stock reservation (select_for_update)
         for item in cart_items:
@@ -109,7 +111,7 @@ class OrderService:
         Cancels an order, sets its status to CANCELLED,
         and returns all line item stock back to inventory.
         """
-        db_order = Order.objects.get(pk=order.pk)
+        db_order = Order.objects.select_for_update().get(pk=order.pk)
         if db_order.status == Order.Status.CANCELLED:
             return
 

@@ -3,6 +3,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
 from .views.cart import CartViewSet
+from .views.orders import OrderViewSet
 from .views.products import CategoryAPIViewSet, ProductViewSet
 from .views.users import (
     AddressViewSet,
@@ -19,6 +20,7 @@ router.register(r"users/addresses", AddressViewSet, basename="user-addresses")
 router.register(r"categories", CategoryAPIViewSet, basename="categories")
 router.register(r"products", ProductViewSet, basename="products")
 router.register(r"cart", CartViewSet, basename="cart")
+router.register(r"orders", OrderViewSet, basename="orders")
 
 
 urlpatterns = [
