@@ -1,3 +1,5 @@
+from typing import cast
+
 import pytest
 from django.urls import include, path
 from rest_framework import status, viewsets
@@ -37,38 +39,37 @@ urlpatterns = [
 # =============================================================================
 
 
-@pytest.fixture
-def api_client():
-    return APIClient()
-
-
 @pytest.mark.urls("apps.api.tests.test_cart_url")
-def test_regex_url_matching_success(api_client):
+def test_regex_url_matching_success(api_client: APIClient) -> None:
     # Regex pattern: ^api/dummy/regex/(?P<num>\d+)/$
     # Requesting a number should succeed (200 OK)
     url = "/api/dummy/regex/42/"
-    res = api_client.get(url)
+    res = cast(Response, api_client.get(url))
     assert res.status_code == status.HTTP_200_OK
-    assert res.data["source"] == "regex"
-    assert res.data["num"] == "42"
+
+    res_data = cast(dict, res.data)
+    assert res_data["source"] == "regex"
+    assert res_data["num"] == "42"
 
 
 @pytest.mark.urls("apps.api.tests.test_cart_url")
-def test_converter_url_matching_fails_on_integer(api_client):
+def test_converter_url_matching_fails_on_integer(api_client: APIClient) -> None:
     # Regex pattern generated: ^api/dummy/converter/<int:num>/$
     # Requesting an actual integer (e.g. 42) fails (404 Not Found)
     url = "/api/dummy/converter/42/"
-    res = api_client.get(url)
+    res = cast(Response, api_client.get(url))
     assert res.status_code == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.urls("apps.api.tests.test_cart_url")
-def test_converter_url_matching_succeeds_on_literal_string(api_client):
+def test_converter_url_matching_succeeds_on_literal_string(api_client: APIClient) -> None:
     # Regex pattern generated: ^api/dummy/converter/<int:num>/$
     # Requesting the literal string "<int:num>" matches! (200 OK)
     # But "num" argument is None because there is no capture group!
     url = "/api/dummy/converter/<int:num>/"
-    res = api_client.get(url)
+    res = cast(Response, api_client.get(url))
     assert res.status_code == status.HTTP_200_OK
-    assert res.data["source"] == "converter"
-    assert res.data["num"] is None
+
+    res_data = cast(dict, res.data)
+    assert res_data["source"] == "converter"
+    assert res_data["num"] is None
