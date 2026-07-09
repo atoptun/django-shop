@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 from .views.cart import CartViewSet
 from .views.orders import OrderViewSet
 from .views.products import CategoryAPIViewSet, ProductViewSet
+from .views.reviews import ReviewViewSet
 from .views.users import (
     AddressViewSet,
     UserLoginView,
@@ -25,6 +26,16 @@ router.register(r"orders", OrderViewSet, basename="orders")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path(
+        "products/<slug:slug>/reviews/",
+        ReviewViewSet.as_view({"get": "list", "post": "create"}),
+        name="product-reviews-list",
+    ),
+    path(
+        "products/<slug:slug>/reviews/can-review/",
+        ReviewViewSet.as_view({"get": "can_review"}),
+        name="product-reviews-can-review",
+    ),
     # OpenAPI Schema & Swagger Docs
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("docs/", SpectacularSwaggerView.as_view(url_name="api:schema"), name="docs"),

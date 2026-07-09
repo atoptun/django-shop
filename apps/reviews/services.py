@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.http import HttpRequest
+from rest_framework.request import Request as DRFRequest
 
 from apps.orders.models import Order
 from apps.products.models import Product
@@ -7,11 +8,13 @@ from apps.reviews.models import Review
 
 
 class ReviewService:
-    request: HttpRequest | None
+    request: HttpRequest | DRFRequest | None
     user: AbstractUser | AnonymousUser | None
 
     def __init__(
-        self, request: HttpRequest | None, user: AbstractUser | AnonymousUser | None = None
+        self,
+        request: HttpRequest | DRFRequest | None,
+        user: AbstractUser | AnonymousUser | None = None,
     ) -> None:
         self.request = request
         self.user = user or getattr(request, "user", None)
@@ -48,5 +51,18 @@ class ReviewService:
             return False
 
         already_reviewed = Review.objects.filter(product=product, user=self.user).exists()
-
         return already_reviewed
+
+    def create_review(self, product: Product, rating: int, comment: str) -> Review:
+        """Creates a pending review for the product by the authenticated user."""
+        if not (self.user and self.user.is_authenticated):
+            raise ValueError("Authenticated user required to write a review.")
+
+        review = Review.objects.create(
+            product=product,
+            user=self.user,
+            rating=rating,
+            comment=comment,
+            status=Review.Status.PENDING,
+        )
+        return review
