@@ -7,14 +7,11 @@ from apps.payments.models import PaymentMethod
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductListSerializer(read_only=True)
-    subtotal = serializers.SerializerMethodField()
+    subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = OrderItem
         fields = ["id", "product", "quantity", "price", "subtotal"]
-
-    def get_subtotal(self, obj: OrderItem) -> str:
-        return f"{obj.subtotal:.2f}"
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -36,12 +33,9 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderCreateSerializer(serializers.Serializer):
     shipping_address = serializers.CharField(max_length=500)
-    payment_method_id = serializers.IntegerField()
-
-    def validate_payment_method_id(self, value: int) -> int:
-        if not PaymentMethod.objects.filter(id=value, is_active=True).exists():
-            raise serializers.ValidationError("Invalid or inactive payment method.")
-        return value
+    payment_method = serializers.PrimaryKeyRelatedField(
+        queryset=PaymentMethod.objects.filter(is_active=True)
+    )
 
 
 class OrderUpdateSerializer(serializers.Serializer):

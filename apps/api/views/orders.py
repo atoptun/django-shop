@@ -11,28 +11,26 @@ from apps.api.serializers.orders import (
 from apps.cart.services import CartService
 from apps.orders.models import Order
 from apps.orders.services import OrderService
-from apps.payments.models import PaymentMethod
 
 
 class OrderViewSet(viewsets.ViewSet):
     permission_classes = [IsOwner]
     lookup_field = "uuid"
-    lookup_value_regex = r"[0-9a-f-]{36}"
+    lookup_value_regex = r"[0-9a-fA-F-]{36}"
 
     def list(self, request: Request) -> Response:
         orders = Order.objects.filter(user=request.user).prefetch_related("items__product")
-        for order in orders:
-            self.check_object_permissions(request, order)
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request: Request, uuid: str) -> Response:
         try:
-            order = Order.objects.prefetch_related("items__product").get(uuid=uuid)
-        except (Order.DoesNotExist, ValueError):
+            order = Order.objects.prefetch_related("items__product").get(
+                uuid=uuid, user=request.user
+            )
+        except Order.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        self.check_object_permissions(request, order)
         serializer = OrderSerializer(order)
         return Response(serializer.data)
 
@@ -43,13 +41,11 @@ class OrderViewSet(viewsets.ViewSet):
         validated_data = serializer.validated_data
         assert isinstance(validated_data, dict)
         shipping_address = validated_data["shipping_address"]
-        payment_method_id = validated_data["payment_method_id"]
+        payment_method = validated_data["payment_method"]
 
         cart_service = CartService(request)
         if cart_service.get_total_items() == 0:
             raise serializers.ValidationError({"detail": "Your cart is empty."})
-
-        payment_method = PaymentMethod.objects.get(id=payment_method_id)
 
         try:
             order = OrderService.create_order(
@@ -64,11 +60,12 @@ class OrderViewSet(viewsets.ViewSet):
 
     def update(self, request: Request, uuid: str) -> Response:
         try:
-            order = Order.objects.get(uuid=uuid)
-        except (Order.DoesNotExist, ValueError):
+            order = Order.objects.get(uuid=uuid, user=request.user)
+        except Order.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        self.check_object_permissions(request, order)
+        if order.status != Order.Status.PENDING:
+            raise serializers.ValidationError({"detail": "Only pending orders can be cancelled."})
 
         serializer = OrderUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -82,11 +79,12 @@ class OrderViewSet(viewsets.ViewSet):
 
     def destroy(self, request: Request, uuid: str) -> Response:
         try:
-            order = Order.objects.get(uuid=uuid)
-        except (Order.DoesNotExist, ValueError):
+            order = Order.objects.get(uuid=uuid, user=request.user)
+        except Order.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        self.check_object_permissions(request, order)
+        if order.status != Order.Status.PENDING:
+            raise serializers.ValidationError({"detail": "Only pending orders can be cancelled."})
 
         try:
             OrderService.cancel_order(order)
