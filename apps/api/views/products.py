@@ -1,8 +1,9 @@
 from collections import defaultdict
 
 import django_filters
+from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -12,17 +13,21 @@ from apps.products.models import Category, Product
 from ..serializers.products import CategorySerializer, ProductListSerializer
 
 
-@extend_schema(tags=["Products"])
+@extend_schema(
+    tags=["Products"],
+    description="API view set for listing and retrieving categories.",
+)
 class CategoryAPIViewSet(viewsets.ReadOnlyModelViewSet):
-    """API view set for listing and retrieving categories."""
-
     queryset = Category.objects.all()
+    lookup_field = "slug"
     serializer_class = CategorySerializer
+
     permission_classes = [AllowAny]
 
-    def list(self, request, *args, **kwargs):
-        """List categories with their children in a hierarchical structure."""
+    filter_backends = []
+    pagination_class = None
 
+    def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         all_cats: list[Category] = list(queryset)
 
@@ -63,12 +68,37 @@ class ProductFilter(django_filters.FilterSet):
         return queryset
 
 
-@extend_schema(tags=["Products"])
+@extend_schema(
+    tags=["Products"],
+    description="API view set for listing and retrieving products.",
+)
+@method_decorator(
+    name="list",
+    decorator=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="ordering",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Sorting options for the results.",
+                enum=[
+                    "price",
+                    "-price",
+                    "average_rating",
+                    "-average_rating",
+                    "created_at",
+                    "-created_at",
+                ],
+            )
+        ]
+    ),
+)
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    """API view set for listing and retrieving products."""
-
     queryset = Product.objects.filter(is_active=True).select_related("category")
+    lookup_field = "slug"
     serializer_class = ProductListSerializer
+
+    permission_classes = [AllowAny]
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ProductFilter

@@ -1,4 +1,6 @@
-from rest_framework import status, viewsets
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -11,17 +13,36 @@ from apps.api.serializers.cart import (
     CartUpdateSerializer,
 )
 from apps.cart.services import CartService
+from apps.products.models import Product
 
 
+@extend_schema(tags=["Cart"])
 class CartViewSet(viewsets.ViewSet):
     permission_classes = [IsOwner]
 
+    @extend_schema(
+        summary="Retrieve shopping cart",
+        description=(
+            "Retrieve the active user's shopping cart details, "
+            "including items list, quantities, and totals."
+        ),
+        responses={200: CartSerializer},
+    )
     def list(self, request: Request):
         cart_service = CartService(request)
         self.check_object_permissions(request, cart_service.cart)
         serializer = CartSerializer(cart_service.cart)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Add product to cart",
+        description=(
+            "Add a product to the user's shopping cart, specifying quantity. "
+            "If already present, quantity is incremented."
+        ),
+        request=CartAddSerializer,
+        responses={201: CartItemSerializer, 400: OpenApiResponse(description="Bad request")},
+    )
     def create(self, request: Request):
         serializer = CartAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -41,9 +62,31 @@ class CartViewSet(viewsets.ViewSet):
         except ValueError:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=["put", "delete"], url_path=r"items/(?P<product_id>\d+)")
-    def items_detail(self, request: Request, product_id: str):
-        product_id_int = int(product_id)
+    @extend_schema(
+        methods=["PUT"],
+        summary="Update cart item quantity",
+        description="Change the quantity of a product currently inside the user's cart.",
+        request=CartUpdateSerializer,
+        responses={
+            200: inline_serializer(
+                name="CartItemUpdateResponse",
+                fields={
+                    "success": serializers.BooleanField(),
+                    "quantity": serializers.IntegerField(),
+                },
+            ),
+            400: OpenApiResponse(description="Bad request"),
+        },
+    )
+    @extend_schema(
+        methods=["DELETE"],
+        summary="Remove product from cart",
+        description="Delete a product from the user's shopping cart entirely.",
+        responses={204: None},
+    )
+    @action(detail=False, methods=["put", "delete"], url_path=r"items/(?P<product_slug>[-\w]+)")
+    def items_detail(self, request: Request, product_slug: str):
+        product = get_object_or_404(Product, slug=product_slug)
         cart_service = CartService(request)
         self.check_object_permissions(request, cart_service.cart)
 
@@ -55,11 +98,11 @@ class CartViewSet(viewsets.ViewSet):
             assert isinstance(validated_data, dict)
             quantity = validated_data["quantity"]
             try:
-                new_qty = cart_service.update(product_id_int, quantity)
+                new_qty = cart_service.update(product.pk, quantity)
                 return Response({"success": True, "quantity": new_qty}, status=status.HTTP_200_OK)
             except ValueError as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         elif request.method == "DELETE":
-            cart_service.remove(product_id_int)
+            cart_service.remove(product.pk)
             return Response(status=status.HTTP_204_NO_CONTENT)

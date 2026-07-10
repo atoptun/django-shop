@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.products.models import Category, Product
@@ -8,8 +9,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ["id", "name", "slug", "children"]
+        fields = ["slug", "name", "children"]
 
+    @extend_schema_field(serializers.ListSerializer(child=serializers.DictField()))
     def get_children(self, obj: Category):
         children_map = self.context.get("children_map")
 
@@ -28,9 +30,9 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id",
-            "name",
+            # "id",
             "slug",
+            "name",
             "price",
             "category_name",
             "category_slug",
@@ -38,4 +40,5 @@ class ProductListSerializer(serializers.ModelSerializer):
             "stock",
             "average_rating",
             "price_tag",
+            "technical_specifications",
         ]

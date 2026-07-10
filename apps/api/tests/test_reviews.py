@@ -52,18 +52,19 @@ def test_get_reviews_success(api_client: APIClient) -> None:
     res = cast(Response, api_client.get(url))
 
     assert res.status_code == status.HTTP_200_OK
-    res_data = cast(list, res.data)
-    assert len(res_data) == 2
+    res_data = cast(dict, res.data)
+    results = res_data["results"]
+    assert len(results) == 2
 
     # Verify sorting (most recent first)
-    assert res_data[0]["comment"] == r2.comment
-    assert res_data[1]["comment"] == r1.comment
+    assert results[0]["comment"] == r2.comment
+    assert results[1]["comment"] == r1.comment
 
     # Verify keys
-    assert res_data[0]["rating"] == 4
-    assert "created_at" in res_data[0]
-    assert "id" in res_data[0]
-    assert res_data[0]["user"]["username"] == r2.user.username
+    assert results[0]["rating"] == 4
+    assert "created_at" in results[0]
+    assert "id" in results[0]
+    assert results[0]["user"]["username"] == r2.user.username
 
 
 @pytest.mark.django_db
