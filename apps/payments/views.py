@@ -10,6 +10,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from apps.orders.models import Order
+from apps.payments.exceptions import PaymentError
 from apps.payments.forms import (
     BankTransferPaymentForm,
     CardPaymentForm,
@@ -60,8 +61,6 @@ class PaymentProcessingView(LoginRequiredMixin, View):
         method_id = request.POST.get("payment_method")
         try:
             payment_method = PaymentMethod.objects.get(id=method_id, is_active=True)
-            payment.payment_method = payment_method
-            payment.save()
         except (PaymentMethod.DoesNotExist, ValueError):
             messages.error(request, "Invalid payment method selected.")
             return redirect("payments:pay", order_uuid=order.uuid)
@@ -95,31 +94,9 @@ class PaymentProcessingView(LoginRequiredMixin, View):
             )
 
         data = form.cleaned_data
-        try:
-            result = PaymentService.process_order_payment(order, payment_method, data)
-        except PaymentProviderNotFound as e:
-            messages.error(request, f"Configuration Error: {e}")
-            payment_methods = PaymentMethod.objects.filter(is_active=True)
-            forms_map = {
-                "debit": CardPaymentForm(),
-                "wallet": PayPalPaymentForm(),
-                "bank": BankTransferPaymentForm(),
-                "cod": CashOnDeliveryForm(),
-            }
-            return render(
-                request,
-                "payments/pay.html",
-                {
-                    "order": order,
-                    "payment": payment,
-                    "payment_methods": payment_methods,
-                    "selected_method": payment_method,
-                    "forms": forms_map,
-                    "error": str(e),
-                },
-            )
 
-        if result["success"]:
+        try:
+            result = PaymentService.process_order_payment(order, payment_method.code, data)
             if result["status"] == Payment.Status.COMPLETED:
                 messages.success(request, f"Payment for Order #{order.uuid} was successful!")
             elif result["status"] == Payment.Status.PROCESSING:
@@ -135,8 +112,8 @@ class PaymentProcessingView(LoginRequiredMixin, View):
                     "Cash On Delivery! Pay on arrival.",
                 )
             return redirect("accounts:order_history")
-        else:
-            messages.error(request, f"Payment Failed: {result['error']}")
+        except PaymentError as e:
+            messages.error(request, f"Payment Failed: {str(e)}")
             payment_methods = PaymentMethod.objects.filter(is_active=True)
 
             forms_map = {
@@ -156,7 +133,7 @@ class PaymentProcessingView(LoginRequiredMixin, View):
                     "payment_methods": payment_methods,
                     "selected_method": payment_method,
                     "forms": forms_map,
-                    "error": result["error"],
+                    "error": str(e),
                 },
             )
 

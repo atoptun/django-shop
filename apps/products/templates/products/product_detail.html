@@ -51,11 +51,11 @@
           <div class="product-description">{{ product.description|linebreaks }}</div>
           <!-- Container for managing the cart -->
           <div class="cart-controls"
-               data-product-id="{{ product.id }}"
-               data-add-url="{% url 'cart:add_to_cart' product.id %}"
-               data-update-url="{% url 'cart:update_cart' product.id %}">
+               data-product-slug="{{ product.slug }}"
+               data-add-url="{% url 'cart:add_to_cart' product.slug %}"
+               data-update-url="{% url 'cart:update_cart' product.slug %}">
             <form method="post"
-                  action="{% url 'cart:add_to_cart' product.id %}"
+                  action="{% url 'cart:add_to_cart' product.slug %}"
                   id="add-to-cart-form"
                   class="add-to-cart-form
                          {% if in_cart_quantity > 0 %}is-hidden{% endif %}">

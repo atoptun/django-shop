@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views.cart import CartViewSet
 from .views.orders import OrderViewSet
+from .views.payments import PaymentMethodViewSet
 from .views.products import CategoryAPIViewSet, ProductViewSet
 from .views.reviews import ReviewViewSet
 from .views.users import (
@@ -22,6 +23,7 @@ router.register(r"categories", CategoryAPIViewSet, basename="categories")
 router.register(r"products", ProductViewSet, basename="products")
 router.register(r"cart", CartViewSet, basename="cart")
 router.register(r"orders", OrderViewSet, basename="orders")
+router.register(r"payments/methods", PaymentMethodViewSet, basename="payment-methods")
 
 
 urlpatterns = [

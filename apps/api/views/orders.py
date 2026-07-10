@@ -1,20 +1,31 @@
 from typing import Any, cast
 
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from apps.api.exceptions import Conflict, PaymentRequired
 from apps.api.permissions import IsOwner
 from apps.api.serializers.orders import (
     OrderCreateSerializer,
     OrderSerializer,
-    OrderUpdateSerializer,
 )
+from apps.api.serializers.payments import PaymentSubmitSchemaSerializer, PaymentSubmitSerializer
 from apps.cart.services import CartService
 from apps.orders.models import Order
 from apps.orders.services import OrderService
+from apps.payments.exceptions import (
+    InvalidPaymentMethodError,
+    OrderAlreadyPaidError,
+    PaymentAlreadyCompletedError,
+    PaymentDeclinedError,
+    PaymentProcessingInProgressError,
+)
+from apps.payments.models import Payment
+from apps.payments.services import PaymentService
 
 
 @extend_schema(tags=["Orders"])
@@ -44,7 +55,9 @@ class OrderViewSet(viewsets.ViewSet):
         responses={200: OrderSerializer(many=True)},
     )
     def list(self, request: Request) -> Response:
-        orders = Order.objects.filter(user=request.user).prefetch_related("items__product")
+        orders = Order.objects.filter(user=request.user).prefetch_related(
+            "items__product", "payment"
+        )
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
@@ -81,7 +94,6 @@ class OrderViewSet(viewsets.ViewSet):
 
         validated_data = cast(dict[str, Any], serializer.validated_data)
         shipping_address = validated_data["shipping_address"]
-        payment_method = validated_data["payment_method"]
 
         cart_service = CartService(request)
         if cart_service.get_total_items() == 0:
@@ -92,38 +104,12 @@ class OrderViewSet(viewsets.ViewSet):
                 cart_service=cart_service,
                 user=request.user,  # type: ignore
                 shipping_address=shipping_address,
-                payment_method=payment_method,
             )
 
-            order_prefetched = Order.objects.prefetch_related("items__product").get(pk=order.pk)
+            order_prefetched = Order.objects.prefetch_related("items__product", "payment").get(
+                pk=order.pk
+            )
             return Response(OrderSerializer(order_prefetched).data, status=status.HTTP_201_CREATED)
-        except ValueError as e:
-            raise serializers.ValidationError({"detail": str(e)}) from e
-
-    @extend_schema(
-        summary="Cancel an order (PUT)",
-        description=(
-            "Cancel a pending order by updating its status to 'cancelled'. "
-            "Only pending orders can be cancelled."
-        ),
-        request=OrderUpdateSerializer,
-        responses={
-            200: OrderSerializer,
-            400: OpenApiResponse(description="Order cannot be cancelled"),
-            440: OpenApiResponse(description="Order not found"),
-        },
-    )
-    def update(self, request: Request, uuid: str) -> Response:
-        order = self._get_cancellable_order(uuid, request.user)
-
-        serializer = OrderUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        try:
-            OrderService.cancel_order(order)
-
-            order_prefetched = Order.objects.prefetch_related("items__product").get(pk=order.pk)
-            return Response(OrderSerializer(order_prefetched).data, status=status.HTTP_200_OK)
         except ValueError as e:
             raise serializers.ValidationError({"detail": str(e)}) from e
 
@@ -144,3 +130,80 @@ class OrderViewSet(viewsets.ViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ValueError as e:
             raise serializers.ValidationError({"detail": str(e)}) from e
+
+    @extend_schema(
+        methods=["POST"],
+        summary="Pay for an order",
+        description=("Submit payment details to process payment for a pending order. "),
+        request=PaymentSubmitSchemaSerializer,
+        responses={
+            200: inline_serializer(
+                name="PaymentSuccessResponse",
+                fields={
+                    "status": serializers.CharField(),
+                    "payment_status": serializers.CharField(),
+                    "transaction_id": serializers.CharField(),
+                },
+            ),
+            202: inline_serializer(
+                name="PaymentPendingResponse",
+                fields={
+                    "status": serializers.CharField(),
+                    "payment_status": serializers.CharField(),
+                    "transaction_id": serializers.CharField(required=False, allow_null=True),
+                },
+            ),
+            400: OpenApiResponse(description="Bad request (already paid, invalid method)"),
+            402: OpenApiResponse(description="Payment required (declined, insufficient funds)"),
+            404: OpenApiResponse(description="Order not found"),
+            409: OpenApiResponse(description="Conflict (payment processing in progress)"),
+        },
+    )
+    @action(detail=True, methods=["post"], url_path="pay")
+    def pay(self, request: Request, uuid: str) -> Response:
+        try:
+            # NOTE: We fetch the order without select_for_update() here to avoid potential
+            # deadlocks in case of concurrent requests. PaymentService.process_order_payment
+            # manages internal atomic transaction locking safely.
+            order = Order.objects.get(uuid=uuid, user=request.user)
+        except (Order.DoesNotExist, ValueError) as e:
+            raise NotFound("Order not found.") from e
+
+        serializer = PaymentSubmitSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        validated_data = cast(dict, serializer.validated_data)
+        payment_method_code = validated_data["payment_method_code"]
+        payment_data = validated_data.get("payment_data", {})
+
+        try:
+            result = PaymentService.process_order_payment(order, payment_method_code, payment_data)
+
+            if result["status"] == Payment.Status.COMPLETED:
+                return Response(
+                    {
+                        "status": "success",
+                        "payment_status": result["status"],
+                        "transaction_id": result["transaction_id"],
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                return Response(
+                    {
+                        "status": "pending",
+                        "payment_status": result["status"],
+                        "transaction_id": result.get("transaction_id"),
+                    },
+                    status=status.HTTP_202_ACCEPTED,
+                )
+        except (
+            OrderAlreadyPaidError,
+            PaymentAlreadyCompletedError,
+            InvalidPaymentMethodError,
+        ) as e:
+            raise ValidationError({"detail": str(e)}) from e
+        except PaymentProcessingInProgressError as e:
+            raise Conflict(str(e)) from e
+        except PaymentDeclinedError as e:
+            raise PaymentRequired(str(e)) from e

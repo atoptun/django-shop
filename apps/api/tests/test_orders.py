@@ -114,10 +114,6 @@ def test_get_order_detail_non_owner(auth_client: AuthClient) -> None:
     res_get = cast(Response, auth_client.get(url))
     assert res_get.status_code == status.HTTP_404_NOT_FOUND
 
-    # PUT must return 404
-    res_put = cast(Response, auth_client.put(url, {"status": "cancelled"}, format="json"))
-    assert res_put.status_code == status.HTTP_404_NOT_FOUND
-
     # DELETE must return 404
     res_delete = cast(Response, auth_client.delete(url))
     assert res_delete.status_code == status.HTTP_404_NOT_FOUND
@@ -138,26 +134,6 @@ def test_cancel_order_via_delete(auth_client: AuthClient) -> None:
 
 
 @pytest.mark.django_db
-def test_update_status_invalid_fails(auth_client: AuthClient) -> None:
-    user = auth_client.user
-    order = OrderFactory(user=user, status=Order.Status.PENDING, total_price=50.00)
-
-    url = reverse("api:orders-detail", kwargs={"uuid": str(order.uuid)})
-    data = {"status": "shipped"}
-
-    res = cast(Response, auth_client.put(url, data, format="json"))
-    assert res.status_code == status.HTTP_400_BAD_REQUEST
-
-    # Allowing only "cancelled" status update
-    data_cancelled = {"status": "cancelled"}
-    res_cancelled = cast(Response, auth_client.put(url, data_cancelled, format="json"))
-    assert res_cancelled.status_code == status.HTTP_200_OK
-
-    order.refresh_from_db()
-    assert order.status == Order.Status.CANCELLED
-
-
-@pytest.mark.django_db
 def test_cancel_shipped_order_fails(auth_client: AuthClient) -> None:
     user = auth_client.user
     order = OrderFactory(user=user, status=Order.Status.SHIPPED, total_price=50.00)
@@ -167,11 +143,6 @@ def test_cancel_shipped_order_fails(auth_client: AuthClient) -> None:
     # 1. DELETE cancel attempt should fail
     res_delete = cast(Response, auth_client.delete(url))
     assert res_delete.status_code == status.HTTP_400_BAD_REQUEST
-
-    # 2. PUT cancel attempt should fail
-    data_cancelled = {"status": "cancelled"}
-    res_put = cast(Response, auth_client.put(url, data_cancelled, format="json"))
-    assert res_put.status_code == status.HTTP_400_BAD_REQUEST
 
     # Verify status remains SHIPPED
     order.refresh_from_db()

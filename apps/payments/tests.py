@@ -41,7 +41,7 @@ def test_payment_service_successful_charge():
 
     # Simulate a successful Stripe card charge
     result = PaymentService.process_order_payment(
-        order, method, {"card_number": "4000 0000 0000 0002", "cvv": "123"}
+        order, method.code, {"card_number": "4000 0000 0000 0002", "cvv": "123"}
     )
 
     assert result["success"] is True
@@ -59,17 +59,18 @@ def test_payment_service_failed_charge():
     """Verify that a declined card charge leaves the order as PENDING
     and marks payment as FAILED.
     """
+    from apps.payments.exceptions import PaymentDeclinedError
+
     method = PaymentMethodFactory(code="debit", name="Stripe Card")
     order = OrderFactory(status=Order.Status.PENDING)
 
     # Simulate a declined Stripe card charge
-    result = PaymentService.process_order_payment(
-        order, method, {"card_number": "4000 0000 0000 0005", "cvv": "000"}
-    )
+    with pytest.raises(PaymentDeclinedError) as excinfo:
+        PaymentService.process_order_payment(
+            order, method.code, {"card_number": "4000 0000 0000 0005", "cvv": "000"}
+        )
 
-    assert result["success"] is False
-    assert result["status"] == Payment.Status.FAILED
-    assert "Card Insufficient Funds" in result["error"]
+    assert "Card Insufficient Funds" in str(excinfo.value)
 
     order.refresh_from_db()
     payment = order.payment
@@ -82,7 +83,7 @@ def test_cash_on_delivery_processing():
     method = PaymentMethodFactory(code="cod", name="Cash On Delivery")
     order = OrderFactory(status=Order.Status.PENDING)
 
-    result = PaymentService.process_order_payment(order, method, {})
+    result = PaymentService.process_order_payment(order, method.code, {})
 
     assert result["success"] is True
     assert result["status"] == Payment.Status.PENDING

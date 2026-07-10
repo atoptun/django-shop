@@ -1,10 +1,11 @@
 import uuid
 
 from apps.orders.models import Order
+from apps.payments.exceptions import PaymentError
 from apps.payments.models import Payment
 
 
-class PaymentProviderNotFound(ValueError):
+class PaymentProviderNotFound(PaymentError, ValueError):
     """Exception raised when a requested payment provider is not found or supported."""
 
     pass
