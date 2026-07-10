@@ -491,3 +491,73 @@ def test_checkout_form_missing_new_address_fields():
     assert form.is_valid() is False
     for field in ["full_name", "phone", "city", "address"]:
         assert field in form.errors
+
+
+def test_checkout_empty_cart_redirect(client):
+    """Verify checkout page redirects to cart detail when the cart is empty."""
+    user = UserFactory()
+    client.force_login(user)
+
+    url = reverse("orders:checkout")
+
+    # GET request
+    response = client.get(url)
+    assert response.status_code == 302
+    assert response.url == reverse("cart:cart_detail")
+
+    # POST request
+    response = client.post(url, {"shipping_address": "Test Address", "payment_method": 999})
+    assert response.status_code == 302
+    assert response.url == reverse("cart:cart_detail")
+
+
+def test_checkout_invalid_form(client):
+    """Verify checkout page re-renders form with errors when data is invalid."""
+    user = UserFactory()
+    client.force_login(user)
+
+    # Seed product and add to cart to avoid empty cart redirect
+    product = ProductFactory(price=10.00, stock=5)
+    client.post(reverse("cart:add_to_cart", kwargs={"product_slug": product.slug}), {"quantity": 1})
+
+    url = reverse("orders:checkout")
+    # Post with missing address fields
+    response = client.post(
+        url,
+        {
+            "address_choice": "new",
+            "full_name": "",  # missing
+            "phone": "",
+            "city": "",
+            "address": "",
+            "payment_method": 999,
+        },
+    )
+    assert response.status_code == 200
+    form = response.context["form"]
+    assert "full_name" in form.errors
+
+
+def test_checkout_invalid_payment_method(client):
+    """Verify checkout page re-renders when an invalid/inactive payment method is chosen."""
+    user = UserFactory()
+    client.force_login(user)
+
+    product = ProductFactory(price=10.00, stock=5)
+    client.post(reverse("cart:add_to_cart", kwargs={"product_slug": product.slug}), {"quantity": 1})
+
+    url = reverse("orders:checkout")
+    response = client.post(
+        url,
+        {
+            "address_choice": "new",
+            "full_name": "Jane Doe",
+            "phone": "+380501234567",
+            "city": "Lviv",
+            "address": "Galitska Sq 5",
+            "payment_method": 9999,  # invalid method ID
+        },
+    )
+    assert response.status_code == 200
+    form = response.context["form"]
+    assert "payment_method" in form.errors

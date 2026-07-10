@@ -290,3 +290,24 @@ def test_checkout_payment_form_invalid(client):
     assert "Invalid payment details provided." in [
         str(m) for m in get_messages(response.wsgi_request)
     ]
+
+
+def test_unsupported_payment_provider_raises_error():
+    """Verify that calling an unsupported payment provider raises PaymentProviderNotFound."""
+    from apps.payments.providers import PaymentProviderFactory, PaymentProviderNotFound
+
+    with pytest.raises(PaymentProviderNotFound):
+        PaymentProviderFactory.get_simulator("unknown_provider")
+
+
+def test_paypal_decline_flow():
+    """Verify PayPal simulator declines when using the decline email address."""
+    from apps.payments.exceptions import PaymentDeclinedError
+    from apps.payments.services import PaymentService
+
+    method = PaymentMethodFactory(code="wallet", name="PayPal")
+    order = OrderFactory(status=Order.Status.PENDING)
+
+    with pytest.raises(PaymentDeclinedError) as excinfo:
+        PaymentService.process_order_payment(order, method.code, {"email": "decline@example.com"})
+    assert "PayPal Account Verification Failed" in str(excinfo.value)
