@@ -8,7 +8,8 @@ from django.shortcuts import redirect
 from django.views import View
 
 from apps.cart.services import CartService
-from apps.payments.models import PaymentMethod
+from apps.payments.exceptions import PaymentError
+from apps.payments.models import Payment, PaymentMethod
 
 from .services import OrderService
 
@@ -75,10 +76,9 @@ class CheckoutView(LoginRequiredMixin, View):
 
         # 2. Process payment immediately
         payment_data = payment_form.cleaned_data
-        result = PaymentService.process_order_payment(order, payment_method, payment_data)
 
-        if result["success"]:
-            from apps.payments.models import Payment
+        try:
+            result = PaymentService.process_order_payment(order, payment_method.code, payment_data)
 
             if result["status"] == Payment.Status.COMPLETED:
                 messages.success(request, "Order placed and payment was successful!")
@@ -94,11 +94,10 @@ class CheckoutView(LoginRequiredMixin, View):
                     "Order placed successfully via Cash On Delivery! Pay on arrival.",
                 )
             return redirect("accounts:order_history")
-        else:
+        except PaymentError as e:
             messages.warning(
                 request,
-                f"Order created, but payment failed: {result['error']}. "
-                "Please retry your payment below.",
+                f"Order created, but payment failed: {str(e)}. Please retry your payment below.",
             )
             return redirect("payments:pay", order_uuid=order.uuid)
 

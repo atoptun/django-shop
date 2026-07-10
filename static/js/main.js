@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // "Add to Cart" Button and Counter
     const cartControls = document.querySelector(".cart-controls");
     if (cartControls) {
-      const productId = cartControls.dataset.productId;
+      const productSlug = cartControls.dataset.productSlug;
       const addUrl = cartControls.dataset.addUrl;
       const updateUrl = cartControls.dataset.updateUrl;
 

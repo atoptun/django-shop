@@ -272,6 +272,7 @@ SPECTACULAR_SETTINGS = {
         {"name": "Product Reviews", "description": "Manage customer reviews for products"},
         {"name": "Cart", "description": "Manage customer shopping cart"},
         {"name": "Orders", "description": "Place and manage customer orders"},
+        {"name": "Payments", "description": "Manage payment methods and transactions"},
     ],
     "POSTPROCESSING_HOOKS": ["drf_spectacular.hooks.postprocess_schema_enums"],
     "APPEND_COMPONENTS": {

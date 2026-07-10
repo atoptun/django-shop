@@ -30,7 +30,6 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            # "id",
             "slug",
             "name",
             "price",
@@ -41,4 +40,22 @@ class ProductListSerializer(serializers.ModelSerializer):
             "average_rating",
             "price_tag",
             "technical_specifications",
+        ]
+
+
+class ProductShortSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source="category.name", read_only=True, allow_null=True)
+    category_slug = serializers.CharField(source="category.slug", read_only=True, allow_null=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            "slug",
+            "name",
+            "price",
+            "category_name",
+            "category_slug",
+            "image",
+            "average_rating",
+            "price_tag",
         ]

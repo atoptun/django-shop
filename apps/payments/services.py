@@ -1,29 +1,73 @@
 from django.db import transaction
 
 from apps.orders.models import Order
+from apps.payments.exceptions import (
+    InvalidPaymentMethodError,
+    OrderAlreadyPaidError,
+    PaymentAlreadyCompletedError,
+    PaymentDeclinedError,
+    PaymentProcessingInProgressError,
+)
 from apps.payments.models import Payment, PaymentMethod
 from apps.payments.providers import PaymentProviderFactory
 
 
 class PaymentService:
     @staticmethod
-    def process_order_payment(order: Order, payment_method: PaymentMethod, data: dict) -> dict:
-        """Processes payment via simulated provider and updates order status accordingly."""
+    def process_order_payment(order: Order, payment_method_code: str, data: dict) -> dict:
+        """Verifies order/payment states, checks payment method,
+        processes payment, and updates DB.
+        """
+        # State checking and verification under lock
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order.pk)
+
+            if order.status == Order.Status.PAID:
+                raise OrderAlreadyPaidError("This order has already been paid.")
+
+            payment, _ = Payment.objects.select_for_update().get_or_create(order=order)
+
+            if payment.status == Payment.Status.COMPLETED:
+                raise PaymentAlreadyCompletedError(
+                    "Payment for this order has already been completed."
+                )
+
+            if payment.status == Payment.Status.PROCESSING:
+                raise PaymentProcessingInProgressError("Payment is already being processed.")
+
+            try:
+                payment_method = PaymentMethod.objects.get(code=payment_method_code, is_active=True)
+            except PaymentMethod.DoesNotExist as e:
+                raise InvalidPaymentMethodError("Payment method is invalid or inactive.") from e
+
+        # Call provider
         simulator = PaymentProviderFactory.get_simulator(payment_method.code)
         result = simulator.process_payment(order, data)
 
+        # Update status and payment method atomically
         with transaction.atomic():
-            payment, _ = Payment.objects.get_or_create(order=order)
+            payment = Payment.objects.select_for_update().get(pk=payment.pk)
+
+            if payment.status == Payment.Status.COMPLETED:
+                raise PaymentAlreadyCompletedError(
+                    "Payment for this order has already been completed."
+                )
+
             payment.payment_method = payment_method
             payment.status = result["status"]
-            if result["transaction_id"]:
+            if result["transaction_id"] is not None:
                 payment.transaction_id = result["transaction_id"]
             payment.save()
 
-            # Update order status if payment is completed
             if payment.status == Payment.Status.COMPLETED:
+                order = Order.objects.select_for_update().get(pk=order.pk)
                 order.status = Order.Status.PAID
                 order.save()
+
+        # If payment failed
+        if payment.status == Payment.Status.FAILED:
+            error_msg = result.get("error", "Transaction was declined.")
+            raise PaymentDeclinedError(error_msg)
 
         return result
 
