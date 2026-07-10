@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
@@ -13,7 +12,6 @@ from apps.api.serializers.cart import (
     CartUpdateSerializer,
 )
 from apps.cart.services import CartService
-from apps.products.models import Product
 
 
 @extend_schema(tags=["Cart"])
@@ -49,15 +47,15 @@ class CartViewSet(viewsets.ViewSet):
 
         validated_data = serializer.validated_data
         assert isinstance(validated_data, dict)
-        product_id = validated_data["product_id"]
+        product_slug = validated_data["product_slug"]
         quantity = validated_data["quantity"]
 
         cart_service = CartService(request)
         self.check_object_permissions(request, cart_service.cart)
 
         try:
-            cart_service.add(product_id, quantity)
-            cart_item = cart_service.cart.items.get(product_id=product_id)  # type: ignore
+            cart_service.add(product_slug, quantity)
+            cart_item = cart_service.cart.items.get(product__slug=product_slug)  # type: ignore
             return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
         except ValueError:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -86,7 +84,6 @@ class CartViewSet(viewsets.ViewSet):
     )
     @action(detail=False, methods=["put", "delete"], url_path=r"items/(?P<product_slug>[-\w]+)")
     def items_detail(self, request: Request, product_slug: str):
-        product = get_object_or_404(Product, slug=product_slug)
         cart_service = CartService(request)
         self.check_object_permissions(request, cart_service.cart)
 
@@ -98,11 +95,11 @@ class CartViewSet(viewsets.ViewSet):
             assert isinstance(validated_data, dict)
             quantity = validated_data["quantity"]
             try:
-                new_qty = cart_service.update(product.pk, quantity)
+                new_qty = cart_service.update(product_slug, quantity)
                 return Response({"success": True, "quantity": new_qty}, status=status.HTTP_200_OK)
             except ValueError as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         elif request.method == "DELETE":
-            cart_service.remove(product.pk)
+            cart_service.remove(product_slug)
             return Response(status=status.HTTP_204_NO_CONTENT)

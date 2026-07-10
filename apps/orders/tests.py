@@ -74,7 +74,7 @@ def test_checkout_view(client):
     client.force_login(user)
 
     product = ProductFactory()
-    client.post(reverse("cart:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 1})
+    client.post(reverse("cart:add_to_cart", kwargs={"product_slug": product.slug}), {"quantity": 1})
 
     response = client.get(url)
     assert response.status_code == 200
@@ -87,7 +87,7 @@ def test_checkout_view(client):
 def test_login_triggers_cart_merge(client):
     product = ProductFactory()
     session = client.session
-    session["cart"] = {str(product.id): 3}
+    session["cart"] = {product.slug: 3}
     session.save()
 
     # Authenticate user via POST request to login endpoint
@@ -117,29 +117,29 @@ def test_cart_service_stock_limit():
     service = CartService(request)
 
     # Adding within stock passes
-    service.add(product.id, 4)
-    assert service.get_product_quantity(product.id) == 4
+    service.add(product.slug, 4)
+    assert service.get_product_quantity(product.slug) == 4
 
     # Exceeding stock raises ValueError
     with pytest.raises(ValueError) as excinfo:
-        service.add(product.id, 2)
+        service.add(product.slug, 2)
     assert "Only 5 items are available in stock." in str(excinfo.value)
 
     # Updating within stock passes
-    service.update(product.id, 5)
-    assert service.get_product_quantity(product.id) == 5
+    service.update(product.slug, 5)
+    assert service.get_product_quantity(product.slug) == 5
 
     # Updating exceeding stock raises ValueError
     with pytest.raises(ValueError):
-        service.update(product.id, 6)
+        service.update(product.slug, 6)
 
 
 def test_update_cart_view_stock_limit_ajax(client):
     product = ProductFactory(stock=2)
-    url = reverse("cart:update_cart", kwargs={"product_id": product.id})
+    url = reverse("cart:update_cart", kwargs={"product_slug": product.slug})
 
     session = client.session
-    session["cart"] = {str(product.id): 2}
+    session["cart"] = {product.slug: 2}
     session.save()
 
     response = client.post(
@@ -158,7 +158,7 @@ def test_checkout_submit_success(client):
     client.force_login(user)
 
     product = ProductFactory(price=10.00, stock=5)
-    client.post(reverse("cart:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 2})
+    client.post(reverse("cart:add_to_cart", kwargs={"product_slug": product.slug}), {"quantity": 2})
 
     from apps.payments.models import PaymentMethod
 
@@ -199,7 +199,7 @@ def test_checkout_submit_out_of_stock(client):
     client.force_login(user)
 
     product = ProductFactory(price=10.00, stock=1)
-    client.post(reverse("cart:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 1})
+    client.post(reverse("cart:add_to_cart", kwargs={"product_slug": product.slug}), {"quantity": 1})
 
     # Simulate race condition where stock becomes 0
     product.stock = 0
@@ -253,7 +253,7 @@ def test_checkout_emails_sent(client):
     client.force_login(user)
 
     product = ProductFactory(price=5.00, stock=10)
-    client.post(reverse("cart:add_to_cart", kwargs={"product_id": product.id}), {"quantity": 1})
+    client.post(reverse("cart:add_to_cart", kwargs={"product_slug": product.slug}), {"quantity": 1})
 
     from apps.payments.models import PaymentMethod
 

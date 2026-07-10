@@ -48,22 +48,22 @@ def test_guest_cart_lifecycle():
     assert service.get_total_price() == Decimal("0")
     assert len(service.get_items()) == 0
 
-    assert service.add(product1.pk, 2) == 2
-    assert service.add(product2.pk, 1) == 1
+    assert service.add(product1.slug, 2) == 2
+    assert service.add(product2.slug, 1) == 1
 
     assert service.get_total_items() == 3
     assert service.get_total_price() == Decimal("45.00")
-    assert service.get_product_quantity(product1.pk) == 2
+    assert service.get_product_quantity(product1.slug) == 2
 
-    assert service.update(product1.pk, 5) == 5
+    assert service.update(product1.slug, 5) == 5
     assert service.get_total_items() == 6
     assert service.get_total_price() == Decimal("75.00")
 
-    service.remove(product2.pk)
+    service.remove(product2.slug)
     assert service.get_total_items() == 5
-    assert service.get_product_quantity(product2.pk) == 0
+    assert service.get_product_quantity(product2.slug) == 0
 
-    assert service.update(product1.pk, 0) == 0
+    assert service.update(product1.slug, 0) == 0
     assert service.get_total_items() == 0
 
 
@@ -76,20 +76,20 @@ def test_db_cart_lifecycle():
     request = get_mock_request(user=user)
     service = CartService(request)
 
-    assert service.add(product1.pk, 1) == 1
-    assert service.add(product2.pk, 2) == 2
+    assert service.add(product1.slug, 1) == 1
+    assert service.add(product2.slug, 2) == 2
 
     assert service.get_total_items() == 3
     assert service.get_total_price() == Decimal("75.00")
     assert Cart.objects.filter(user=user).exists() is True
 
-    assert service.update(product1.pk, 3) == 3
+    assert service.update(product1.slug, 3) == 3
     assert service.get_total_items() == 5
 
-    service.remove(product2.pk)
+    service.remove(product2.slug)
     assert service.get_total_items() == 3
 
-    assert service.update(product1.pk, 0) == 0
+    assert service.update(product1.slug, 0) == 0
     assert service.get_total_items() == 0
 
 
@@ -99,7 +99,7 @@ def test_merge_session_cart():
     product1 = ProductFactory(price=10.00)
     product2 = ProductFactory(price=20.00)
 
-    session_data = {"cart": {str(product1.pk): 3, str(product2.pk): 1}}
+    session_data = {"cart": {product1.slug: 3, product2.slug: 1}}
     request = get_mock_request(user=user, session_data=session_data)
 
     db_cart = CartFactory(user=user)
@@ -140,18 +140,18 @@ def test_cart_view(client):
 @pytest.mark.django_db
 def test_add_to_cart_view_redirect(client):
     product = ProductFactory()
-    url = reverse("cart:add_to_cart", kwargs={"product_id": product.id})
+    url = reverse("cart:add_to_cart", kwargs={"product_slug": product.slug})
 
     response = client.post(url, {"quantity": 2})
     assert response.status_code == 302
     assert response.url == reverse("cart:cart_detail")
-    assert client.session["cart"][str(product.id)] == 2
+    assert client.session["cart"][product.slug] == 2
 
 
 @pytest.mark.django_db
 def test_add_to_cart_view_ajax(client):
     product = ProductFactory()
-    url = reverse("cart:add_to_cart", kwargs={"product_id": product.id})
+    url = reverse("cart:add_to_cart", kwargs={"product_slug": product.slug})
 
     response = client.post(
         url,
@@ -168,10 +168,10 @@ def test_add_to_cart_view_ajax(client):
 @pytest.mark.django_db
 def test_update_cart_view_ajax(client):
     product = ProductFactory(price=10.00)
-    url = reverse("cart:update_cart", kwargs={"product_id": product.id})
+    url = reverse("cart:update_cart", kwargs={"product_slug": product.slug})
 
     session = client.session
-    session["cart"] = {str(product.id): 2}
+    session["cart"] = {product.slug: 2}
     session.save()
 
     response = client.post(
@@ -189,7 +189,7 @@ def test_update_cart_view_ajax(client):
 @pytest.mark.django_db
 def test_update_cart_view_invalid_action(client):
     product = ProductFactory()
-    url = reverse("cart:update_cart", kwargs={"product_id": product.id})
+    url = reverse("cart:update_cart", kwargs={"product_slug": product.slug})
 
     # Non-AJAX missing/invalid action should redirect
     response = client.post(url)
@@ -204,10 +204,10 @@ def test_update_cart_view_invalid_action(client):
 @pytest.mark.django_db
 def test_remove_from_cart_view_ajax(client):
     product = ProductFactory()
-    url = reverse("cart:remove_from_cart", kwargs={"product_id": product.id})
+    url = reverse("cart:remove_from_cart", kwargs={"product_slug": product.slug})
 
     session = client.session
-    session["cart"] = {str(product.id): 5}
+    session["cart"] = {product.slug: 5}
     session.save()
 
     response = client.post(
@@ -224,10 +224,10 @@ def test_remove_from_cart_view_ajax(client):
 @pytest.mark.django_db
 def test_update_cart_view_stock_limit_ajax(client):
     product = ProductFactory(stock=2)
-    url = reverse("cart:update_cart", kwargs={"product_id": product.id})
+    url = reverse("cart:update_cart", kwargs={"product_slug": product.slug})
 
     session = client.session
-    session["cart"] = {str(product.id): 2}
+    session["cart"] = {product.slug: 2}
     session.save()
 
     response = client.post(
@@ -244,7 +244,7 @@ def test_update_cart_view_stock_limit_ajax(client):
 @pytest.mark.django_db
 def test_add_to_cart_ajax_value_error(client):
     product = ProductFactory(stock=2)
-    url = reverse("cart:add_to_cart", kwargs={"product_id": product.id})
+    url = reverse("cart:add_to_cart", kwargs={"product_slug": product.slug})
 
     response = client.post(
         url,
@@ -260,10 +260,10 @@ def test_add_to_cart_ajax_value_error(client):
 @pytest.mark.django_db
 def test_update_cart_ajax_value_error(client):
     product = ProductFactory(stock=2)
-    url = reverse("cart:update_cart", kwargs={"product_id": product.id})
+    url = reverse("cart:update_cart", kwargs={"product_slug": product.slug})
 
     session = client.session
-    session["cart"] = {str(product.id): 2}
+    session["cart"] = {product.slug: 2}
     session.save()
 
     response = client.post(
@@ -279,10 +279,10 @@ def test_update_cart_ajax_value_error(client):
 @pytest.mark.django_db
 def test_update_cart_non_existent_product_ajax(client):
     session = client.session
-    session["cart"] = {"99999": 1}
+    session["cart"] = {"non-existent-slug": 1}
     session.save()
 
-    url = reverse("cart:update_cart", kwargs={"product_id": 99999})
+    url = reverse("cart:update_cart", kwargs={"product_slug": "non-existent-slug"})
     response = client.post(
         url,
         {"action": "increase"},

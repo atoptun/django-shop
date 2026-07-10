@@ -3,6 +3,7 @@ from typing import cast
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status, viewsets
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -66,9 +67,7 @@ class ReviewViewSet(viewsets.ViewSet):
         service = ReviewService(request)
 
         if not service.can_user_review_product(product):
-            raise serializers.ValidationError(
-                {"detail": "You must purchase the product before reviewing it."}
-            )
+            raise PermissionDenied("You must purchase the product before reviewing it.")
 
         if service.user_already_reviewed_product(product):
             raise serializers.ValidationError({"detail": "You have already reviewed this product."})
