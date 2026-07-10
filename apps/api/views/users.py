@@ -1,7 +1,8 @@
 from typing import cast
 
-from drf_spectacular.utils import extend_schema
-from rest_framework import generics, status, viewsets
+from django.utils.decorators import method_decorator
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import filters, generics, status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -18,37 +19,34 @@ from apps.accounts.models import Address
 from ..permissions import IsOwner
 from ..requests import AuthenticatedRequest
 from ..serializers.users import (
-    AddressSerializer,
+    UserAddressSerializer,
     UserProfileSerializer,
     UserRegisterResponseSerializer,
     UserRegisterSerializer,
 )
 
 
-@extend_schema(tags=["User Authentication"])
+@extend_schema(
+    tags=["User Authentication"],
+    description="Obtain JWT tokens for user authentication.",
+)
 class UserLoginView(SimpleJWTTokenObtainPairView):
-    """
-    Takes a set of user credentials and returns an access and refresh JWT.
-    """
-
     pass
 
 
-@extend_schema(tags=["User Authentication"])
+@extend_schema(
+    tags=["User Authentication"],
+    description="Refresh JWT access tokens using a refresh token.",
+)
 class UserTokenRefreshView(SimpleJWTTokenRefreshView):
-    """
-    Takes a refresh type JSON web token and returns an access type JSON web token.
-    """
-
     pass
 
 
-@extend_schema(tags=["User Authentication"])
+@extend_schema(
+    tags=["User Authentication"],
+    description="Register a new user account.",
+)
 class UserRegisterAPIView(generics.CreateAPIView):
-    """
-    API view for user registration.
-    """
-
     serializer_class = UserRegisterSerializer
     permission_classes = [AllowAny]
 
@@ -72,10 +70,11 @@ class UserRegisterAPIView(generics.CreateAPIView):
         )
 
 
-@extend_schema(tags=["User Profile"])
+@extend_schema(
+    tags=["User Profile"],
+    description="Get or update the authenticated user's profile.",
+)
 class UserProfileAPIView(generics.RetrieveUpdateAPIView):
-    """Get/update the authenticated user's profile."""
-
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
@@ -84,16 +83,46 @@ class UserProfileAPIView(generics.RetrieveUpdateAPIView):
         return request.user
 
 
-@extend_schema(tags=["User Addresses"])
+@extend_schema(
+    tags=["User Addresses"],
+    description="Manage the authenticated user's addresses.",
+)
+@method_decorator(
+    name="list",
+    decorator=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="ordering",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Sorting options for the results.",
+                enum=[
+                    "recipient_name",
+                    "-recipient_name",
+                    "city",
+                    "-city",
+                    "created_at",
+                    "-created_at",
+                ],
+            )
+        ]
+    ),
+)
 class AddressViewSet(viewsets.ModelViewSet):
-    """ViewSet for managing addresses."""
-
-    serializer_class = AddressSerializer
+    serializer_class = UserAddressSerializer
     permission_classes = [IsOwner]
 
+    search_fields = ["recipient_name", "phone", "city", "address_line"]
+
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    ordering_fields = ["recipient_name", "city", "created_at"]
+    ordering = ["-created_at"]
+
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Address.objects.none()
         request = cast(AuthenticatedRequest, self.request)
-        return Address.objects.filter(user=request.user).order_by("-created_at")
+        return Address.objects.filter(user=request.user)
 
     def create(self, request: AuthenticatedRequest, *args, **kwargs):
         is_many = isinstance(request.data, list)

@@ -77,7 +77,7 @@ class ProductDetailView(DetailView):
         from apps.reviews.services import ReviewService
 
         cart_service = CartService(self.request)
-        context["in_cart_quantity"] = cart_service.get_product_quantity(self.object.id)
+        context["in_cart_quantity"] = cart_service.get_product_quantity(self.object.slug)
 
         review_service = ReviewService(self.request)
         can_review = review_service.can_user_review_product(product)

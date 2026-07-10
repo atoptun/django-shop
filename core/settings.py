@@ -239,7 +239,8 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    # "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "core.pagination.PagedPageNumberPagination",
     "PAGE_SIZE": 10,
     "EXCEPTION_HANDLER": "apps.api.exception_handlers.custom_exception_handler",
 }
@@ -268,9 +269,9 @@ SPECTACULAR_SETTINGS = {
         {"name": "User Profile", "description": "Operations on user profiles"},
         {"name": "User Addresses", "description": "Manage user shipping addresses"},
         {"name": "Products", "description": "Browse and view catalog products"},
+        {"name": "Product Reviews", "description": "Manage customer reviews for products"},
         {"name": "Cart", "description": "Manage customer shopping cart"},
         {"name": "Orders", "description": "Place and manage customer orders"},
-        {"name": "Reviews", "description": "Manage customer reviews for products"},
     ],
     "POSTPROCESSING_HOOKS": ["drf_spectacular.hooks.postprocess_schema_enums"],
     "APPEND_COMPONENTS": {

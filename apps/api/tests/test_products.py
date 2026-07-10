@@ -18,8 +18,7 @@ def test_categories_list_nested(api_client: APIClient) -> None:
     res = cast(Response, api_client.get(url))
     assert res.status_code == status.HTTP_200_OK
 
-    res_data = cast(dict, res.data)
-    data = res_data["results"]
+    data = cast(dict, res.data)
     assert len(data) == 1
     assert data[0]["slug"] == "parent"
     assert len(data[0]["children"]) == 1
@@ -40,7 +39,7 @@ def test_product_list_and_detail(api_client: APIClient) -> None:
     assert res_data["results"][0]["name"] == "Beer Lager"
 
     # 2. Test Detail
-    url_detail = reverse("api:products-detail", kwargs={"pk": product.id})
+    url_detail = reverse("api:products-detail", kwargs={"slug": product.slug})
     res_detail = cast(Response, api_client.get(url_detail))
     assert res_detail.status_code == status.HTTP_200_OK
 

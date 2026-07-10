@@ -1,5 +1,6 @@
 from typing import Any, cast
 
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status, viewsets
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
@@ -16,6 +17,7 @@ from apps.orders.models import Order
 from apps.orders.services import OrderService
 
 
+@extend_schema(tags=["Orders"])
 class OrderViewSet(viewsets.ViewSet):
     permission_classes = [IsOwner]
     lookup_field = "uuid"
@@ -33,11 +35,24 @@ class OrderViewSet(viewsets.ViewSet):
             raise ValidationError({"detail": "Only pending orders can be cancelled."})
         return order
 
+    @extend_schema(
+        summary="List user orders",
+        description=(
+            "Retrieve a list of all orders placed by the authenticated user, "
+            "ordered by creation date."
+        ),
+        responses={200: OrderSerializer(many=True)},
+    )
     def list(self, request: Request) -> Response:
         orders = Order.objects.filter(user=request.user).prefetch_related("items__product")
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Retrieve order details",
+        description="Retrieve detailed information about a specific order by its public UUID.",
+        responses={200: OrderSerializer, 404: OpenApiResponse(description="Order not found")},
+    )
     def retrieve(self, request: Request, uuid: str) -> Response:
         try:
             order = Order.objects.prefetch_related("items__product").get(
@@ -49,6 +64,17 @@ class OrderViewSet(viewsets.ViewSet):
         serializer = OrderSerializer(order)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Create an order",
+        description=(
+            "Create a new order containing all the items currently in the user's shopping cart."
+        ),
+        request=OrderCreateSerializer,
+        responses={
+            201: OrderSerializer,
+            400: OpenApiResponse(description="Invalid request or empty cart"),
+        },
+    )
     def create(self, request: Request) -> Response:
         serializer = OrderCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -74,6 +100,19 @@ class OrderViewSet(viewsets.ViewSet):
         except ValueError as e:
             raise serializers.ValidationError({"detail": str(e)}) from e
 
+    @extend_schema(
+        summary="Cancel an order (PUT)",
+        description=(
+            "Cancel a pending order by updating its status to 'cancelled'. "
+            "Only pending orders can be cancelled."
+        ),
+        request=OrderUpdateSerializer,
+        responses={
+            200: OrderSerializer,
+            400: OpenApiResponse(description="Order cannot be cancelled"),
+            440: OpenApiResponse(description="Order not found"),
+        },
+    )
     def update(self, request: Request, uuid: str) -> Response:
         order = self._get_cancellable_order(uuid, request.user)
 
@@ -88,6 +127,15 @@ class OrderViewSet(viewsets.ViewSet):
         except ValueError as e:
             raise serializers.ValidationError({"detail": str(e)}) from e
 
+    @extend_schema(
+        summary="Cancel an order (DELETE)",
+        description="Cancel a pending order. Returns 204 No Content upon successful cancellation.",
+        responses={
+            204: None,
+            400: OpenApiResponse(description="Order cannot be cancelled"),
+            404: OpenApiResponse(description="Order not found"),
+        },
+    )
     def destroy(self, request: Request, uuid: str) -> Response:
         order = self._get_cancellable_order(uuid, request.user)
 

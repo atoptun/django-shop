@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from rest_framework import serializers
 
 from apps.api.serializers.products import ProductListSerializer
@@ -32,18 +33,26 @@ class CartSerializer(serializers.ModelSerializer):
 
 
 class CartAddSerializer(serializers.Serializer):
-    product_id = serializers.IntegerField()
+    product_slug = serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r"^[-\w]+$",
+                message="Product slug must be a valid slug format.",
+                code="invalid_format",
+            )
+        ]
+    )
     quantity = serializers.IntegerField(min_value=1, default=1)
 
-    def validate_product_id(self, value: int) -> int:
-        if not Product.objects.filter(id=value).exists():
+    def validate_product_slug(self, value: str) -> str:
+        if not Product.objects.filter(slug=value).exists():
             raise serializers.ValidationError("Product does not exist.")
         return value
 
     def validate(self, attrs: dict) -> dict:
-        product_id = attrs["product_id"]
+        product_slug = attrs["product_slug"]
         quantity = attrs["quantity"]
-        product = Product.objects.get(id=product_id)
+        product = Product.objects.get(slug=product_slug)
         if quantity > product.stock:
             raise serializers.ValidationError(
                 {"quantity": f"Only {product.stock} items are available in stock."}

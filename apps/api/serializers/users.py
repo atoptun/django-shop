@@ -74,7 +74,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)  # type: ignore
 
 
-class AddressSerializer(serializers.ModelSerializer):
+class UserAddressSerializer(serializers.ModelSerializer):
     """
     Serializer for address model.
     """

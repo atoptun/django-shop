@@ -27,7 +27,7 @@ class CartView(TemplateView):
 
 class AddToCartView(View):
     def post(
-        self, request: HttpRequest, product_id: int, *args: Any, **kwargs: Any
+        self, request: HttpRequest, product_slug: str, *args: Any, **kwargs: Any
     ) -> HttpResponse:
         cart_service = CartService(request)
         try:
@@ -36,7 +36,7 @@ class AddToCartView(View):
             quantity = 1
 
         try:
-            new_qty = cart_service.add(product_id, quantity)
+            new_qty = cart_service.add(product_slug, quantity)
         except ValueError as e:
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"success": False, "error": str(e)}, status=400)
@@ -59,7 +59,7 @@ class AddToCartView(View):
 
 class UpdateCartView(View):
     def post(
-        self, request: HttpRequest, product_id: int, *args: Any, **kwargs: Any
+        self, request: HttpRequest, product_slug: str, *args: Any, **kwargs: Any
     ) -> HttpResponse:
         cart_service = CartService(request)
         action = request.POST.get("action", "")
@@ -73,13 +73,13 @@ class UpdateCartView(View):
         try:
             new_qty = 0
             if action == "increase":
-                current_qty = cart_service.get_product_quantity(product_id)
-                new_qty = cart_service.update(product_id, current_qty + 1)
+                current_qty = cart_service.get_product_quantity(product_slug)
+                new_qty = cart_service.update(product_slug, current_qty + 1)
             elif action == "decrease":
-                current_qty = cart_service.get_product_quantity(product_id)
-                new_qty = cart_service.update(product_id, current_qty - 1)
+                current_qty = cart_service.get_product_quantity(product_slug)
+                new_qty = cart_service.update(product_slug, current_qty - 1)
             elif action == "remove":
-                cart_service.remove(product_id)
+                cart_service.remove(product_slug)
                 new_qty = 0
         except ValueError as e:
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -88,18 +88,11 @@ class UpdateCartView(View):
             messages.error(request, str(e))
             return redirect("cart:cart_detail")
 
-        # total_items = cart_service.get_total_items()
-        # total_price = cart_service.get_total_price()
-
-        # items_by_id = {i["product"].pk: i for i in cart_service.get_items()}
-        # subtotal = items_by_id[product_id]["subtotal"]
-        # if product_id in items_by_id else Decimal(0)
-
         items = cart_service.get_items()
-        items_by_id = {i["product"].pk: i for i in items}
+        items_by_slug = {i["product"].slug: i for i in items}
         total_items = sum(i["quantity"] for i in items)
         total_price = sum((i["subtotal"] for i in items), Decimal(0))
-        subtotal = items_by_id.get(product_id, {}).get("subtotal", Decimal(0))
+        subtotal = items_by_slug.get(product_slug, {}).get("subtotal", Decimal(0))
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse(
@@ -116,10 +109,10 @@ class UpdateCartView(View):
 
 class RemoveFromCartView(View):
     def post(
-        self, request: HttpRequest, product_id: int, *args: Any, **kwargs: Any
+        self, request: HttpRequest, product_slug: str, *args: Any, **kwargs: Any
     ) -> HttpResponse:
         cart_service = CartService(request)
-        cart_service.remove(product_id)
+        cart_service.remove(product_slug)
         total_items = cart_service.get_total_items()
         total_price = cart_service.get_total_price()
 
