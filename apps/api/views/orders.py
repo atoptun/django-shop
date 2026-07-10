@@ -3,10 +3,11 @@ from typing import Any, cast
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException, NotFound, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from apps.api.exceptions import Conflict, PaymentRequired
 from apps.api.permissions import IsOwner
 from apps.api.serializers.orders import (
     OrderCreateSerializer,
@@ -25,16 +26,6 @@ from apps.payments.exceptions import (
 )
 from apps.payments.models import Payment
 from apps.payments.services import PaymentService
-
-
-class Conflict(APIException):
-    status_code = status.HTTP_409_CONFLICT
-    default_detail = "Conflict."
-
-
-class PaymentRequired(APIException):
-    status_code = status.HTTP_402_PAYMENT_REQUIRED
-    default_detail = "Payment Required."
 
 
 @extend_schema(tags=["Orders"])
@@ -103,7 +94,6 @@ class OrderViewSet(viewsets.ViewSet):
 
         validated_data = cast(dict[str, Any], serializer.validated_data)
         shipping_address = validated_data["shipping_address"]
-        # payment_method = validated_data["payment_method"]
 
         cart_service = CartService(request)
         if cart_service.get_total_items() == 0:
@@ -114,7 +104,6 @@ class OrderViewSet(viewsets.ViewSet):
                 cart_service=cart_service,
                 user=request.user,  # type: ignore
                 shipping_address=shipping_address,
-                # payment_method=payment_method,
             )
 
             order_prefetched = Order.objects.prefetch_related("items__product", "payment").get(
@@ -173,6 +162,9 @@ class OrderViewSet(viewsets.ViewSet):
     @action(detail=True, methods=["post"], url_path="pay")
     def pay(self, request: Request, uuid: str) -> Response:
         try:
+            # NOTE: We fetch the order without select_for_update() here to avoid potential
+            # deadlocks in case of concurrent requests. PaymentService.process_order_payment
+            # manages internal atomic transaction locking safely.
             order = Order.objects.get(uuid=uuid, user=request.user)
         except (Order.DoesNotExist, ValueError) as e:
             raise NotFound("Order not found.") from e

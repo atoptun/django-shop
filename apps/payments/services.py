@@ -18,13 +18,15 @@ class PaymentService:
         """Verifies order/payment states, checks payment method,
         processes payment, and updates DB.
         """
-        # State checking and verification under lock
+        # Step 1-6: State checking and verification under lock
         with transaction.atomic():
+            # Lock the order row to prevent concurrent payment requests
             order = Order.objects.select_for_update().get(pk=order.pk)
 
             if order.status == Order.Status.PAID:
                 raise OrderAlreadyPaidError("This order has already been paid.")
 
+            # Retrieve or Create Payment under lock
             payment, _ = Payment.objects.select_for_update().get_or_create(order=order)
 
             if payment.status == Payment.Status.COMPLETED:
@@ -40,20 +42,27 @@ class PaymentService:
             except PaymentMethod.DoesNotExist as e:
                 raise InvalidPaymentMethodError("Payment method is invalid or inactive.") from e
 
-        # Call provider
+            # Set payment to PROCESSING state to prevent concurrent requests from slipping through
+            # while the payment simulator/gateway is executing.
+            payment.status = Payment.Status.PROCESSING
+            payment.payment_method = payment_method
+            payment.save()
+
+        # Step 7: Call provider (outside primary lock)
         simulator = PaymentProviderFactory.get_simulator(payment_method.code)
         result = simulator.process_payment(order, data)
 
-        # Update status and payment method atomically
+        # Step 8: Update status and payment method atomically
         with transaction.atomic():
+            # Refresh and lock payment row
             payment = Payment.objects.select_for_update().get(pk=payment.pk)
 
+            # Double check status to avoid race condition
             if payment.status == Payment.Status.COMPLETED:
                 raise PaymentAlreadyCompletedError(
                     "Payment for this order has already been completed."
                 )
 
-            payment.payment_method = payment_method
             payment.status = result["status"]
             if result["transaction_id"] is not None:
                 payment.transaction_id = result["transaction_id"]
@@ -64,7 +73,9 @@ class PaymentService:
                 order.status = Order.Status.PAID
                 order.save()
 
-        # If payment failed
+        # Step 9: If payment failed, raise PaymentDeclinedError
+        # NOTE: If PaymentDeclinedError is raised, the payment transaction is persisted as FAILED,
+        # but the order remains PENDING so that the customer can retry checkout.
         if payment.status == Payment.Status.FAILED:
             error_msg = result.get("error", "Transaction was declined.")
             raise PaymentDeclinedError(error_msg)

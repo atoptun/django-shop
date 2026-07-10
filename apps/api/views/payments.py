@@ -11,13 +11,17 @@ from apps.payments.models import PaymentMethod
     description="API view set for managing payment methods.",
 )
 class PaymentMethodViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = PaymentMethod.objects.filter(is_active=True)
     serializer_class = PaymentMethodSerializer
 
     permission_classes = [AllowAny]
 
     filter_backends = []
+
     pagination_class = None
+
+    def get_queryset(self):
+        """Evaluate queryset per-request to capture runtime changes cleanly."""
+        return PaymentMethod.objects.filter(is_active=True)
 
     @extend_schema(
         summary="List available payment methods",

@@ -5,13 +5,16 @@ class PaymentError(Exception):
 
 
 class OrderAlreadyPaidError(PaymentError):
-    """Raised if trying to pay for an order that is already in PAID status."""
+    """Raised if trying to pay for an order that is already in PAID status (order-level check)."""
 
     pass
 
 
 class PaymentAlreadyCompletedError(PaymentError):
-    """Raised if the associated Payment transaction is already COMPLETED."""
+    """Raised if the order is not yet PAID but the associated Payment record
+
+    is already COMPLETED (payment-level check).
+    """
 
     pass
 

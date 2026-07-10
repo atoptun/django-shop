@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 from django.views import View
 
 from apps.cart.services import CartService
-from apps.payments.exceptions import PaymentError
+from apps.payments.exceptions import InvalidPaymentMethodError, PaymentDeclinedError, PaymentError
 from apps.payments.models import Payment, PaymentMethod
 
 from .services import OrderService
@@ -26,7 +26,7 @@ class CheckoutView(LoginRequiredMixin, View):
         form = CheckoutForm(user=request.user)
         return self._render_checkout_page(request, form, cart_service)
 
-    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: C901
         cart_service = CartService(request)
         if cart_service.get_total_items() == 0:
             messages.warning(request, "Your cart is empty.")
@@ -94,6 +94,19 @@ class CheckoutView(LoginRequiredMixin, View):
                     "Order placed successfully via Cash On Delivery! Pay on arrival.",
                 )
             return redirect("accounts:order_history")
+        except PaymentDeclinedError as e:
+            messages.warning(
+                request,
+                f"Payment declined: {str(e)}. Please retry your payment below.",
+            )
+            return redirect("payments:pay", order_uuid=order.uuid)
+        except InvalidPaymentMethodError as e:
+            messages.error(
+                request,
+                f"Invalid payment method configuration: {str(e)}. "
+                "Please select another payment method.",
+            )
+            return redirect("payments:pay", order_uuid=order.uuid)
         except PaymentError as e:
             messages.warning(
                 request,
