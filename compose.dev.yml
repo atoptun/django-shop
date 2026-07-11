@@ -16,6 +16,7 @@ services:
       sh -c "uv run manage.py makemigrations &&
              uv run manage.py migrate &&
              uv run manage.py setup_admin &&
+             uv run manage.py seed_products &&
              uv run python -m debugpy --listen 0.0.0.0:5678 -m manage runserver 0.0.0.0:8000"
     ports:
       # - "8000:8000" # django app
