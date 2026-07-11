@@ -3,7 +3,9 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path
+from django.views.decorators.csrf import csrf_exempt
 
+from apps.analytics.views import PrivateGraphQLView
 from apps.dashboard.views import admin_dashboard_view
 
 urlpatterns = [
@@ -18,6 +20,12 @@ urlpatterns = [
     path("cart/", include("apps.cart.urls", namespace="cart")),
     # API URLs
     path("api/", include("apps.api.urls", namespace="api")),
+    # Analytics GraphQL endpoint (staff-only access enforced by PrivateGraphQLView)
+    path(
+        "graphql/",
+        csrf_exempt(PrivateGraphQLView.as_view(graphiql=settings.DEBUG)),
+        name="graphql",
+    ),
 ]
 
 
