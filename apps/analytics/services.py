@@ -3,8 +3,8 @@ from decimal import Decimal
 from typing import TypedDict
 
 from django.contrib.auth import get_user_model
-from django.db.models import Avg, Count, F, Sum
-from django.db.models.functions import TruncDate
+from django.db.models import Avg, Count, DecimalField, F, Sum
+from django.db.models.functions import Cast, TruncDate
 
 from apps.orders.models import Order, OrderItem
 from apps.products.models import Product
@@ -14,7 +14,7 @@ User = get_user_model()
 
 def _or_zero_decimal(value: Decimal | None) -> Decimal:
     """Return value if not None, else Decimal('0.00')."""
-    return value if value is not None else Decimal("0.00")
+    return value.quantize(Decimal("10.00")) if value is not None else Decimal("0.00")
 
 
 def _or_zero_int(value: int | None) -> int:
@@ -64,7 +64,10 @@ class OrderAnalyticsService:
         aggregates = paid_orders.aggregate(
             revenue=Sum("total_price"),
             total_orders=Count("id"),
-            avg_value=Avg("total_price"),
+            avg_value=Cast(
+                Avg("total_price"),
+                output_field=DecimalField(max_digits=10, decimal_places=2),
+            ),
         )
 
         revenue = _or_zero_decimal(aggregates["revenue"])
