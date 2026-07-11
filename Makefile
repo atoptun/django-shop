@@ -10,7 +10,7 @@ LOCAL_DB_PORT=5433
 DOCKER_DEV_PROJECT_NAME=dj_shop_dev
 DOCKER_PROD_PROJECT_NAME=dj_shop_prod
 
-.PHONY: help db-migrate db-upgrade db-seed-test-source doc-migrate doc-upgrade doc-current doc-history
+.PHONY: help db-migrate db-upgrade
 
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -81,23 +81,6 @@ db-current: ## Display the current migration revision of the Docker database
 	POSTGRES_HOST=$(LOCAL_DB_HOST) POSTGRES_PORT=$(LOCAL_DB_PORT) uv run manage.py showmigrations
 db-history: ## List the full migration history from the Docker container context
 	POSTGRES_HOST=$(LOCAL_DB_HOST) POSTGRES_PORT=$(LOCAL_DB_PORT) uv run manage.py showmigrations --plan
-
-# =============================================================================
-# DOCKER MIGRATIONS (Executed inside the running 'api' container)
-# =============================================================================
-
-doc-migrate: ## Generate a migration script INSIDE Docker container (Usage: make doc-migrate m="description")
-	@if [ -z "$(m)" ]; then echo "Error: Please specify a migration message. Example: make doc-migrate m='init tables'"; exit 1; fi
-	docker compose -p $(DOCKER_DEV_PROJECT_NAME) exec app uv run alembic revision --autogenerate -m "$(m)"
-
-doc-upgrade: ## Apply all pending migrations INSIDE Docker container
-	docker compose -p $(DOCKER_DEV_PROJECT_NAME) exec app uv run alembic upgrade head
-
-doc-current: ## Display the current migration revision of the Docker database
-	docker compose -p $(DOCKER_DEV_PROJECT_NAME) exec app uv run alembic current
-
-doc-history: ## List the full migration history from the Docker container context
-	docker compose -p $(DOCKER_DEV_PROJECT_NAME) exec app uv run alembic history -v
 
 
 # This catch-all rule prevents Make from failing if you pass extra words
