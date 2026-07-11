@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",
+    "graphene_django",
     "django_filters",
     "compressor",
     "static_precompiler",
@@ -78,6 +79,7 @@ INSTALLED_APPS = [
     "apps.payments.apps.PaymentsConfig",
     "apps.cart.apps.CartConfig",
     "apps.api.apps.ApiConfig",
+    "apps.analytics.apps.AnalyticsConfig",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -299,6 +301,16 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
+
+GRAPHENE = {
+    "SCHEMA": "apps.analytics.graphql.schema.schema",
+    "MIDDLEWARE": ["apps.analytics.graphql.middleware.StaffOnlyMiddleware"],
+}
+
+
+UNFOLD = {}
+
+
 if DEBUG:
     import socket
 
@@ -310,6 +322,3 @@ if DEBUG:
         # print(f"INTERNAL_IPS: {INTERNAL_IPS}")
     except Exception:
         pass
-
-
-UNFOLD = {}
